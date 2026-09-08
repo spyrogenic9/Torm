@@ -34,7 +34,7 @@ export interface GameState {
   name: string;
   level: number;
   xp: number;
-  age: number; // in game days
+  age: number;
   rank: string;
 
   // Resources
@@ -67,7 +67,7 @@ export interface GameState {
   crimeExp: number;
   crimeSkill: number;
 
-  // Status
+  // Status & Timers
   inHospital: boolean;
   hospitalTimer: number;
   inJail: boolean;
@@ -336,7 +336,6 @@ export const useGameStore = create<GameState>()(
             crimeLogs: [log, ...state.crimeLogs].slice(0, 50),
           });
         } else {
-          // Failed crime - chance of jail
           const jailChance = Math.random() * 100;
           const goJail = jailChance < 40;
 
@@ -364,7 +363,6 @@ export const useGameStore = create<GameState>()(
         const playerDef = state.defense * 2 + state.dexterity;
         const enemyAtk = enemy.strength + enemy.speed;
 
-        // Simulate combat rounds
         let playerLife = state.maxLife;
         let enemyLife = enemy.life;
         const weapon = items.find(i => i.id === state.equippedWeapon);
@@ -373,7 +371,6 @@ export const useGameStore = create<GameState>()(
         const armorDef = armor?.effectValue || 0;
 
         for (let round = 0; round < 20; round++) {
-          // Player attacks
           const hitChance = Math.min(95, 50 + state.speed * 0.5 - enemy.dexterity * 0.3);
           if (Math.random() * 100 < hitChance) {
             const isCrit = Math.random() * 100 < (5 + state.dexterity * 0.2);
@@ -383,7 +380,6 @@ export const useGameStore = create<GameState>()(
 
           if (enemyLife <= 0) break;
 
-          // Enemy attacks
           const enemyHitChance = Math.min(90, 50 + enemy.speed * 0.5 - state.dexterity * 0.3 - armorDef * 0.2);
           if (Math.random() * 100 < enemyHitChance) {
             const dmg = Math.max(1, Math.floor(enemyAtk * 0.5 - state.defense * 0.2 - armorDef * 0.3));
@@ -425,7 +421,6 @@ export const useGameStore = create<GameState>()(
             newState.totalCashEarned = state.totalCashEarned + reward;
           }
 
-          // XP gain
           const xpGain = Math.floor(enemy.level * 5);
           const newXp = state.xp + xpGain;
           const neededXp = xpForLevel(state.level);
@@ -441,7 +436,6 @@ export const useGameStore = create<GameState>()(
 
           set(newState);
         } else {
-          // Lost - go to hospital
           set({
             energy: state.energy - 5,
             inHospital: true,
@@ -660,7 +654,7 @@ export const useGameStore = create<GameState>()(
         set({
           isTraveling: true,
           travelDestination: destinationId,
-          travelTimer: 15, // simplified
+          travelTimer: 15,
         });
       },
 
@@ -727,10 +721,17 @@ export const useGameStore = create<GameState>()(
         const state = get();
         const updates: Partial<GameState> = {};
 
-        // Regenerate resources
+        // Regenerate resources (every tick = 3 seconds)
+        // Energy: +1 per tick (roughly 1 per 3 seconds)
         if (state.energy < state.maxEnergy) updates.energy = Math.min(state.maxEnergy, state.energy + 1);
+        
+        // Nerve: +1 per tick
         if (state.nerve < state.maxNerve) updates.nerve = Math.min(state.maxNerve, state.nerve + 1);
+        
+        // Happy: -1 per tick (slow decay)
         if (state.happy > 0) updates.happy = Math.max(0, state.happy - 1);
+        
+        // Life: +5 per tick when not in hospital
         if (!state.inHospital && state.life < state.maxLife) updates.life = Math.min(state.maxLife, state.life + 5);
 
         // Hospital timer
@@ -809,7 +810,6 @@ export const useGameStore = create<GameState>()(
           meritPoints: state.meritPoints - 1,
         };
 
-        // Apply merit effects
         switch (merit) {
           case 'strength': updates.strength = state.strength + 5; break;
           case 'defense': updates.defense = state.defense + 5; break;

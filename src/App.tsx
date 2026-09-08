@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from './store';
 import { useExtendedStore } from './store2';
-import { crimes, gyms, courses, jobs, items, npcEnemies, stocks, properties, cityAreas, destinations, casinoGames } from './data';
+import { crimes, gyms, courses, jobs, items, npcEnemies, stocks, properties, destinations, casinoGames } from './data';
 import { organizedCrimes, territories, cars, raceTracks, huntAnimals, missions, awards, companies, bounties, collections, viruses, marriageCandidates } from './data2';
 
-// Torn City style navigation - matches actual torn.com structure
 type MainSection = 'home' | 'items' | 'city' | 'jobs' | 'gym' | 'crimes' | 'travel' | 'education' | 'properties' | 'faction' | 'messages' | 'profile';
 type CityLocation = 'bank' | 'casino' | 'loan_shark' | 'item_market' | 'auction' | 'points_market' | 'hospital' | 'jail' | 'museum' | 'dump' | 'shops' | 'post_office' | 'church' | 'community';
-type CrimeTab = 'crimes' | 'organized' | 'jail_records';
-type ProfileTab = 'overview' | 'stats' | 'merits' | 'awards' | 'equipment' | 'logs';
-type FactionTab = 'info' | 'members' | 'oc' | 'warfare' | 'forum';
 
 function App() {
   const [section, setSection] = useState<MainSection>('home');
@@ -19,7 +15,6 @@ function App() {
   const store = useGameStore();
   const ext = useExtendedStore();
 
-  // Game tick every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       store.tick();
@@ -32,8 +27,7 @@ function App() {
     if (store.name === 'Player') setShowNameModal(true);
   }, []);
 
-  const handleCityNav = (loc: CityLocation) => {
-    setSection('city');
+  const handleCityNav = (loc: CityLocation | null) => {
     setCityLocation(loc);
     setMobileMenuOpen(false);
   };
@@ -59,11 +53,8 @@ function App() {
     { id: 'profile', label: 'Profile', icon: '👤' },
   ];
 
-  const isDisabled = store.inHospital || store.inJail || store.isTraveling;
-
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
-      {/* Name Modal */}
       {showNameModal && <NameModal onClose={() => setShowNameModal(false)} />}
 
       {/* Top Status Bar */}
@@ -82,18 +73,42 @@ function App() {
               <span className="text-green-400 font-mono hidden sm:inline">${store.cash.toLocaleString()}</span>
             </div>
           </div>
-          {/* Status indicators */}
           <div className="flex gap-1 mt-1 text-[10px] overflow-x-auto scrollbar-hide">
-            {store.inHospital && <span className="bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded whitespace-nowrap">🏥 {store.hospitalTimer}</span>}
-            {store.inJail && <span className="bg-yellow-900/80 text-yellow-300 px-1.5 py-0.5 rounded whitespace-nowrap">🔒 {store.jailTimer}</span>}
-            {store.isTraveling && <span className="bg-blue-900/80 text-blue-300 px-1.5 py-0.5 rounded whitespace-nowrap">✈️ {store.travelTimer}</span>}
-            {store.inEducation && <span className="bg-purple-900/80 text-purple-300 px-1.5 py-0.5 rounded whitespace-nowrap">📚 {store.educationTimer}</span>}
-            {ext.racingActive && <span className="bg-cyan-900/80 text-cyan-300 px-1.5 py-0.5 rounded whitespace-nowrap">🏎️ Racing</span>}
+            {store.inHospital && (
+              <span className="bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                🏥 Hospital <span className="font-bold font-mono">{store.hospitalTimer}</span>
+              </span>
+            )}
+            {store.inJail && (
+              <span className="bg-yellow-900/80 text-yellow-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                🔒 Jail <span className="font-bold font-mono">{store.jailTimer}</span>
+              </span>
+            )}
+            {store.isTraveling && (
+              <span className="bg-blue-900/80 text-blue-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                ✈️ Travel <span className="font-bold font-mono">{store.travelTimer}</span>
+              </span>
+            )}
+            {store.inEducation && (
+              <span className="bg-purple-900/80 text-purple-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                📚 Study <span className="font-bold font-mono">{store.educationTimer}</span>
+              </span>
+            )}
+            {ext.racingActive && (
+              <span className="bg-cyan-900/80 text-cyan-300 px-1.5 py-0.5 rounded whitespace-nowrap">
+                🏎️ Racing
+              </span>
+            )}
+            {store.bankInvestment > 0 && (
+              <span className="bg-green-900/80 text-green-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                💰 Invest <span className="font-bold font-mono">{store.bankInvestmentTime}</span>
+              </span>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main Navigation - Torn style horizontal nav */}
+      {/* Main Navigation */}
       <nav className="bg-gray-800/90 border-b border-gray-700 hidden md:block">
         <div className="max-w-7xl mx-auto px-2">
           <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-1">
@@ -135,7 +150,6 @@ function App() {
             <span>More</span>
           </button>
         </div>
-        {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
           <div className="absolute bottom-full left-0 right-0 bg-gray-800 border-t border-gray-700 p-2 grid grid-cols-3 gap-1 max-h-[60vh] overflow-y-auto">
             {mainNavItems.map(item => (
@@ -179,13 +193,14 @@ function App() {
 
 function MiniBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
+  const isLow = pct < 20;
   return (
     <div className="flex items-center gap-0.5">
-      <span className="text-gray-500 text-[9px]">{label}</span>
+      <span className={`text-[9px] ${isLow ? 'text-red-400 font-bold' : 'text-gray-500'}`}>{label}</span>
       <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
-        <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+        <div className={`h-full ${color} transition-all duration-300 ${isLow ? 'animate-pulse' : ''}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[9px] text-gray-400 font-mono w-8">{value}/{max}</span>
+      <span className={`text-[9px] font-mono w-8 ${isLow ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{value}/{max}</span>
     </div>
   );
 }
@@ -227,38 +242,55 @@ function SectionCard({ title, children, className = '' }: { title?: string; chil
   );
 }
 
-// ============ HOME PAGE ============
+function TimerDisplay({ label, time, icon, color = 'amber' }: { label: string; time: number; icon: string; color?: string }) {
+  if (time <= 0) return null;
+  
+  const colorClasses = {
+    amber: 'bg-amber-900/50 border-amber-700 text-amber-300',
+    red: 'bg-red-900/50 border-red-700 text-red-300',
+    blue: 'bg-blue-900/50 border-blue-700 text-blue-300',
+    purple: 'bg-purple-900/50 border-purple-700 text-purple-300',
+    yellow: 'bg-yellow-900/50 border-yellow-700 text-yellow-300',
+  };
+  
+  return (
+    <div className={`${colorClasses[color as keyof typeof colorClasses]} border rounded-lg p-3 flex items-center justify-between`}>
+      <div className="flex items-center gap-2">
+        <span className="text-xl">{icon}</span>
+        <div>
+          <p className="text-xs font-bold">{label}</p>
+          <p className="text-[10px] opacity-75">Time remaining</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-lg font-bold font-mono">{time}</p>
+        <p className="text-[10px] opacity-75">ticks</p>
+      </div>
+    </div>
+  );
+}
+
+// ============ PAGES ============
+
 function HomePage() {
   const store = useGameStore();
   const ext = useExtendedStore();
   const xpNeeded = Math.floor(100 * Math.pow(1.5, store.level - 1));
-  
-  // Daily news rotation
-  const dailyNews = [
-    '🔥 Faction war heats up in downtown!',
-    '💰 Record-breaking heist reported',
-    '🏋️ New gym opens in West Side',
-    '📈 Stock market shows strong growth',
-    '🚨 Police crack down on organized crime',
-    '🏎️ Racing championship finals tonight',
-    '💎 Rare artifact discovered at museum',
-  ];
-  
+
   return (
     <div className="space-y-4">
-      {/* Daily News Banner */}
-      <div className="bg-gradient-to-r from-amber-900/50 to-amber-800/50 rounded-lg p-3 border border-amber-700">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">📰</span>
-          <div>
-            <p className="text-xs text-amber-300 font-bold">DAILY NEWS</p>
-            <p className="text-sm text-white">{dailyNews[store.age % dailyNews.length]}</p>
-          </div>
+      {/* Active Timers */}
+      {(store.inHospital || store.inJail || store.isTraveling || store.inEducation) && (
+        <div className="space-y-2">
+          <TimerDisplay label="Hospital" time={store.hospitalTimer} icon="🏥" color="red" />
+          <TimerDisplay label="Jail" time={store.jailTimer} icon="🔒" color="yellow" />
+          <TimerDisplay label="Traveling" time={store.travelTimer} icon="✈️" color="blue" />
+          <TimerDisplay label="Education" time={store.educationTimer} icon="📚" color="purple" />
         </div>
-      </div>
+      )}
 
-      {/* Character Summary */}
-      <SectionCard>        <div className="flex items-center gap-4 mb-4">
+      <SectionCard>
+        <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center text-2xl">👤</div>
           <div>
             <h2 className="text-lg font-bold text-white">{store.name}</h2>
@@ -270,7 +302,6 @@ function HomePage() {
             <p className="text-xs text-gray-400">Bank: ${store.bank.toLocaleString()}</p>
           </div>
         </div>
-        {/* XP Bar */}
         <div className="mb-3">
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>Level Progress</span>
@@ -280,7 +311,6 @@ function HomePage() {
             <div className="h-full bg-purple-500 transition-all" style={{ width: `${(store.xp / xpNeeded) * 100}%` }} />
           </div>
         </div>
-        {/* Quick Stats */}
         <div className="grid grid-cols-4 gap-2 text-center text-xs">
           <div className="bg-gray-700/50 rounded p-2">
             <p className="text-red-400 font-bold">{store.strength}</p>
@@ -301,99 +331,46 @@ function HomePage() {
         </div>
       </SectionCard>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <QuickAction icon="💪" label="Train" desc="Go to Gym" color="border-red-800" />
-        <QuickAction icon="🔫" label="Crime" desc="Commit crime" color="border-orange-800" />
-        <QuickAction icon="⚔️" label="Attack" desc="Fight players" color="border-purple-800" />
-        <QuickAction icon="💼" label="Work" desc="Do your job" color="border-blue-800" />
-      </div>
-
-      {/* Tips & Tutorial */}
-      <SectionCard title="💡 Tips for New Players">
-        <div className="space-y-2 text-sm text-gray-300">
-          <p>• Start with low-level crimes to build nerve and earn cash</p>
-          <p>• Train at the gym to increase your battle stats</p>
-          <p>• Join a faction to access organized crimes and warfare</p>
-          <p>• Invest in the bank for passive income</p>
-          <p>• Travel abroad (level 15+) for unique items and hunting</p>
+      {/* Resource Bars */}
+      <SectionCard title="📊 Resources">
+        <div className="space-y-2">
+          <ResourceBar label="Life" value={store.life} max={store.maxLife} color="bg-red-500" icon="❤️" />
+          <ResourceBar label="Energy" value={store.energy} max={store.maxEnergy} color="bg-green-500" icon="⚡" />
+          <ResourceBar label="Nerve" value={store.nerve} max={store.maxNerve} color="bg-orange-500" icon="🧠" />
+          <ResourceBar label="Happy" value={store.happy} max={store.maxHappy} color="bg-pink-500" icon="😊" />
         </div>
+        <p className="text-[10px] text-gray-500 mt-2 text-center">Resources regenerate over time</p>
       </SectionCard>
+    </div>
+  );
+}
 
-      {/* Recent Activity */}
-      <SectionCard title="📋 Recent Activity">
-        <div className="space-y-2 text-sm">
-          {store.combatLogs.slice(0, 3).map(log => (
-            <div key={log.id} className={`flex justify-between items-center p-2 rounded ${log.result === 'win' ? 'bg-green-900/20' : 'bg-red-900/20'}`}>
-              <span className="text-gray-300">{log.result === 'win' ? '✅' : '❌'} {log.type} {log.target}</span>
-              <span className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
-            </div>
-          ))}
-          {store.crimeLogs.slice(0, 3).map(log => (
-            <div key={log.id} className={`flex justify-between items-center p-2 rounded ${log.success ? 'bg-green-900/20' : 'bg-red-900/20'}`}>
-              <span className="text-gray-300">{log.success ? '✅' : '❌'} {log.crimeName} {log.success && `+$${log.reward}`}</span>
-              <span className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
-            </div>
-          ))}
-          {store.combatLogs.length === 0 && store.crimeLogs.length === 0 && (
-            <p className="text-gray-500 text-center py-4">No recent activity. Start your journey!</p>
-          )}
+function ResourceBar({ label, value, max, color, icon }: { label: string; value: number; max: number; color: string; icon: string }) {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  const isLow = pct < 20;
+  
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-lg">{icon}</span>
+      <div className="flex-1">
+        <div className="flex justify-between text-xs mb-0.5">
+          <span className={`font-medium ${isLow ? 'text-red-400' : 'text-gray-300'}`}>{label}</span>
+          <span className={`font-mono ${isLow ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{value}/{max}</span>
         </div>
-      </SectionCard>
-
-      {/* Status Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SectionCard title="📊 Status">
-          <div className="space-y-2 text-sm">
-            <StatusRow label="Job" value={store.currentJob ? jobs.find(j => j.id === store.currentJob)?.name || 'Unknown' : 'Unemployed'} />
-            <StatusRow label="Faction" value={store.factionName || 'None'} />
-            <StatusRow label="Property" value={store.currentProperty ? properties.find(p => p.id === store.currentProperty)?.name || 'Unknown' : 'None'} />
-            <StatusRow label="Education" value={store.inEducation ? courses.find(c => c.id === store.educationCourse)?.name || 'Studying' : 'None'} />
-            <StatusRow label="Married" value={ext.marriedTo || 'No'} />
-          </div>
-        </SectionCard>
-        <SectionCard title="💰 Finances">
-          <div className="space-y-2 text-sm">
-            <StatusRow label="Cash" value={`$${store.cash.toLocaleString()}`} />
-            <StatusRow label="Bank" value={`$${store.bank.toLocaleString()}`} />
-            <StatusRow label="Investment" value={`$${store.bankInvestment.toLocaleString()}`} />
-            <StatusRow label="Points" value={`${store.points}`} />
-            <StatusRow label="Net Worth" value={`$${(store.cash + store.bank + store.bankInvestment).toLocaleString()}`} />
-          </div>
-        </SectionCard>
+        <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+          <div className={`h-full ${color} transition-all duration-300 ${isLow ? 'animate-pulse' : ''}`} style={{ width: `${pct}%` }} />
+        </div>
       </div>
     </div>
   );
 }
 
-function QuickAction({ icon, label, desc, color }: { icon: string; label: string; desc: string; color: string }) {
-  return (
-    <div className={`bg-gray-800 rounded-lg p-3 border-l-2 ${color} text-center`}>
-      <span className="text-xl">{icon}</span>
-      <p className="text-xs font-bold text-white mt-1">{label}</p>
-      <p className="text-[10px] text-gray-400">{desc}</p>
-    </div>
-  );
-}
-
-function StatusRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-gray-400">{label}</span>
-      <span className="text-white">{value}</span>
-    </div>
-  );
-}
-
-// ============ ITEMS PAGE (Inventory + Equipment) ============
 function ItemsPage() {
-  const store = useGameStore();
   const [tab, setTab] = useState<'inventory' | 'equipment' | 'bazaar'>('inventory');
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">🎒 Items</h2>
-      
       <div className="flex gap-2">
         {(['inventory', 'equipment', 'bazaar'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
@@ -402,7 +379,6 @@ function ItemsPage() {
           </button>
         ))}
       </div>
-
       {tab === 'inventory' && <InventoryTab />}
       {tab === 'equipment' && <EquipmentTab />}
       {tab === 'bazaar' && <BazaarTab />}
@@ -459,69 +435,54 @@ function InventoryTab() {
 
 function EquipmentTab() {
   const store = useGameStore();
-  const weapon = items.find(i => i.id === store.equippedWeapon);
-  const armor = items.find(i => i.id === store.equippedArmor);
-  const weapons = items.filter(i => ['Melee', 'Primary', 'Secondary', 'Temporary'].includes(i.category));
+  const weapons = items.filter(i => ['Melee', 'Primary', 'Secondary'].includes(i.category));
   const armors = items.filter(i => i.category === 'Armor');
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SectionCard title="⚔️ Weapon">
-          <p className="text-sm text-gray-400 mb-2">Currently equipped:</p>
-          <div className="bg-gray-700 rounded p-3 mb-3">
-            <p className="font-bold text-white">{weapon?.name || 'Fists'}</p>
-            <p className="text-xs text-gray-400">Damage: {weapon?.effectValue || 3}</p>
-          </div>
-          <p className="text-xs text-gray-400 mb-2">Available weapons:</p>
-          <div className="space-y-1 max-h-48 overflow-y-auto">
-            {weapons.map(w => {
-              const owned = store.inventory.find(i => i.itemId === w.id);
-              return (
-                <div key={w.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
-                  <span className="text-gray-300">{w.name} (DMG: {w.effectValue})</span>
-                  {owned ? (
-                    <button onClick={() => store.useItem(w.id)} className="px-2 py-0.5 bg-amber-600 text-white rounded">Equip</button>
-                  ) : (
-                    <button onClick={() => store.buyItem(w.id)} className="px-2 py-0.5 bg-green-700 text-white rounded">${w.price}</button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </SectionCard>
+      <SectionCard title="⚔️ Weapons">
+        <p className="text-xs text-gray-400 mb-2">Equipped: <span className="text-white">{items.find(i => i.id === store.equippedWeapon)?.name || 'Fists'}</span></p>
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {weapons.map(w => {
+            const owned = store.inventory.find(i => i.itemId === w.id);
+            return (
+              <div key={w.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
+                <span className="text-gray-300">{w.name} (DMG: {w.effectValue})</span>
+                {owned ? (
+                  <button onClick={() => store.useItem(w.id)} className="px-2 py-0.5 bg-amber-600 text-white rounded">Equip</button>
+                ) : (
+                  <button onClick={() => store.buyItem(w.id)} className="px-2 py-0.5 bg-green-700 text-white rounded">${w.price}</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
 
-        <SectionCard title="🛡️ Armor">
-          <p className="text-sm text-gray-400 mb-2">Currently equipped:</p>
-          <div className="bg-gray-700 rounded p-3 mb-3">
-            <p className="font-bold text-white">{armor?.name || 'None'}</p>
-            <p className="text-xs text-gray-400">Defense: {armor?.effectValue || 0}</p>
-          </div>
-          <p className="text-xs text-gray-400 mb-2">Available armor:</p>
-          <div className="space-y-1 max-h-48 overflow-y-auto">
-            {armors.map(a => {
-              const owned = store.inventory.find(i => i.itemId === a.id);
-              return (
-                <div key={a.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
-                  <span className="text-gray-300">{a.name} (DEF: {a.effectValue})</span>
-                  {owned ? (
-                    <button onClick={() => store.useItem(a.id)} className="px-2 py-0.5 bg-amber-600 text-white rounded">Equip</button>
-                  ) : (
-                    <button onClick={() => store.buyItem(a.id)} className="px-2 py-0.5 bg-green-700 text-white rounded">${a.price}</button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </SectionCard>
-      </div>
+      <SectionCard title="🛡️ Armor">
+        <p className="text-xs text-gray-400 mb-2">Equipped: <span className="text-white">{store.equippedArmor ? items.find(i => i.id === store.equippedArmor)?.name : 'None'}</span></p>
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {armors.map(a => {
+            const owned = store.inventory.find(i => i.itemId === a.id);
+            return (
+              <div key={a.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
+                <span className="text-gray-300">{a.name} (DEF: {a.effectValue})</span>
+                {owned ? (
+                  <button onClick={() => store.useItem(a.id)} className="px-2 py-0.5 bg-amber-600 text-white rounded">Equip</button>
+                ) : (
+                  <button onClick={() => store.buyItem(a.id)} className="px-2 py-0.5 bg-green-700 text-white rounded">${a.price}</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
     </div>
   );
 }
 
 function BazaarTab() {
   const store = useGameStore();
-  const [message, setMessage] = useState('');
 
   return (
     <SectionCard title="🏬 Your Bazaar">
@@ -531,22 +492,19 @@ function BazaarTab() {
       )}
       <div className="bg-gray-700 rounded p-3 text-center">
         <p className="text-gray-400 text-sm">Your bazaar is {store.points >= 1 ? 'active' : 'locked'}</p>
-        <p className="text-xs text-gray-500 mt-1">List items for sale and earn profit from other players</p>
       </div>
-      {message && <p className="text-green-400 text-xs mt-2">{message}</p>}
     </SectionCard>
   );
 }
 
-// ============ CITY PAGE (Hub for all locations) ============
-function CityPage({ location, onNavigate }: { location: CityLocation | null; onNavigate: (loc: CityLocation) => void }) {
+function CityPage({ location, onNavigate }: { location: CityLocation | null; onNavigate: (loc: CityLocation | null) => void }) {
   if (!location) {
     return <CityMap onNavigate={onNavigate} />;
   }
 
   return (
     <div className="space-y-4">
-      <button onClick={() => onNavigate('bank')} className="text-xs text-amber-400 hover:text-amber-300">
+      <button onClick={() => onNavigate(null)} className="text-xs text-amber-400 hover:text-amber-300">
         ← Back to City Map
       </button>
       {location === 'bank' && <BankLocation />}
@@ -585,61 +543,25 @@ const cityLocationsList: { id: CityLocation; label: string; icon: string; distri
 ];
 
 function CityMap({ onNavigate }: { onNavigate: (loc: CityLocation) => void }) {
-  const districts = ['Financial', 'Red-Light', 'North', 'Center', 'East'];
-  
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">🏙️ Torn City</h2>
       <p className="text-gray-400 text-sm">Navigate to different locations in the city.</p>
-      
-      {districts.map(district => (
-        <SectionCard key={district} title={`📍 ${district}`}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {cityAreas.flatMap(a => a.district === district ? a.locations : []).length > 0 && (
-              cityAreas.filter(a => a.district === district).map(area => (
-                area.locations.map(loc => {
-                  const cityLoc = cityLocationsList.find(cl => cl.label === loc);
-                  if (cityLoc) {
-                    return (
-                      <button key={loc} onClick={() => onNavigate(cityLoc.id)}
-                        className="bg-gray-700 hover:bg-gray-600 rounded-lg p-2 text-left transition-colors">
-                        <span className="text-sm">{cityLoc.icon}</span>
-                        <p className="text-xs text-white mt-0.5">{cityLoc.label}</p>
-                      </button>
-                    );
-                  }
-                  return (
-                    <div key={loc} className="bg-gray-700/50 rounded-lg p-2 text-left opacity-60">
-                      <span className="text-sm">📍</span>
-                      <p className="text-xs text-gray-400 mt-0.5">{loc}</p>
-                    </div>
-                  );
-                })
-              ))
-            )}
-          </div>
-        </SectionCard>
-      ))}
-
-      {/* Direct access to city locations */}
-      <SectionCard title="🗺️ All Locations">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-          {cityLocationsList.map((loc: typeof cityLocationsList[0]) => (
-            <button key={loc.id} onClick={() => onNavigate(loc.id)}
-              className="bg-gray-700 hover:bg-gray-600 rounded-lg p-3 text-left transition-colors border border-gray-600">
-              <span className="text-lg">{loc.icon}</span>
-              <p className="text-xs text-white font-medium mt-1">{loc.label}</p>
-              <p className="text-[10px] text-gray-500">{loc.district}</p>
-            </button>
-          ))}
-        </div>
-      </SectionCard>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+        {cityLocationsList.map(loc => (
+          <button key={loc.id} onClick={() => onNavigate(loc.id)}
+            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-3 text-left transition-colors border border-gray-700">
+            <span className="text-lg">{loc.icon}</span>
+            <p className="text-xs text-white font-medium mt-1">{loc.label}</p>
+            <p className="text-[10px] text-gray-500">{loc.district}</p>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-// ============ CITY LOCATIONS ============
-
+// City location components
 function BankLocation() {
   const store = useGameStore();
   const [depositAmt, setDepositAmt] = useState('');
@@ -647,40 +569,28 @@ function BankLocation() {
   const [investAmt, setInvestAmt] = useState('');
 
   return (
-    <SectionCard title="🏦 Torn City Bank">
-      <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-        <div className="bg-gray-700 rounded p-2">
-          <p className="text-xs text-gray-400">Cash</p>
-          <p className="text-green-400 font-bold text-sm">${store.cash.toLocaleString()}</p>
-        </div>
-        <div className="bg-gray-700 rounded p-2">
-          <p className="text-xs text-gray-400">Balance</p>
-          <p className="text-blue-400 font-bold text-sm">${store.bank.toLocaleString()}</p>
-        </div>
-        <div className="bg-gray-700 rounded p-2">
-          <p className="text-xs text-gray-400">Investment</p>
-          <p className="text-purple-400 font-bold text-sm">${store.bankInvestment.toLocaleString()}</p>
-        </div>
-      </div>
-      
-      {store.bankInvestment > 0 && (
-        <div className="bg-purple-900/30 border border-purple-800 rounded p-2 mb-3 text-xs">
-          <p className="text-purple-300">Investment matures in {store.bankInvestmentTime} ticks (15% interest)</p>
-        </div>
-      )}
-
+    <SectionCard title="🏦 Bank">
       <div className="space-y-3">
-        <div className="flex gap-2">
-          <input type="number" value={depositAmt} onChange={e => setDepositAmt(e.target.value)} placeholder="Amount" className="flex-1 px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
-          <button onClick={() => { store.depositBank(Number(depositAmt)); setDepositAmt(''); }} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded text-sm">Deposit</button>
+        <div className="bg-gray-700 rounded p-3 text-center">
+          <p className="text-xs text-gray-400">Balance</p>
+          <p className="text-xl font-bold text-green-400">${store.bank.toLocaleString()}</p>
+          {store.bankInvestment > 0 && (
+            <p className="text-xs text-blue-400 mt-1">Investment: ${store.bankInvestment.toLocaleString()} ({store.bankInvestmentTime} ticks)</p>
+          )}
         </div>
-        <div className="flex gap-2">
-          <input type="number" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Amount" className="flex-1 px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
-          <button onClick={() => { store.withdrawBank(Number(withdrawAmt)); setWithdrawAmt(''); }} className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded text-sm">Withdraw</button>
-        </div>
-        <div className="flex gap-2">
-          <input type="number" value={investAmt} onChange={e => setInvestAmt(e.target.value)} placeholder="Amount" className="flex-1 px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
-          <button onClick={() => { store.investBank(Number(investAmt)); setInvestAmt(''); }} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded text-sm">Invest (30 ticks)</button>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <input type="number" value={depositAmt} onChange={e => setDepositAmt(e.target.value)} placeholder="Deposit" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
+            <button onClick={() => { store.depositBank(Number(depositAmt)); setDepositAmt(''); }} className="w-full px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs">Deposit</button>
+          </div>
+          <div>
+            <input type="number" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Withdraw" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
+            <button onClick={() => { store.withdrawBank(Number(withdrawAmt)); setWithdrawAmt(''); }} className="w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs">Withdraw</button>
+          </div>
+          <div>
+            <input type="number" value={investAmt} onChange={e => setInvestAmt(e.target.value)} placeholder="Invest" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
+            <button onClick={() => { store.investBank(Number(investAmt)); setInvestAmt(''); }} className="w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs">Invest (15%)</button>
+          </div>
         </div>
       </div>
     </SectionCard>
@@ -689,58 +599,34 @@ function BankLocation() {
 
 function CasinoLocation() {
   const store = useGameStore();
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [bet, setBet] = useState('100');
-  const [result, setResult] = useState<{ win: boolean; amount: number } | null>(null);
-  const [rouletteChoice, setRouletteChoice] = useState('red');
+  const [result, setResult] = useState('');
 
-  const handleGamble = () => {
-    const betAmt = Number(bet);
-    if (!selectedGame || betAmt <= 0) return;
-    const winnings = store.gamble(selectedGame, betAmt, rouletteChoice);
-    setResult({ win: winnings > betAmt, amount: winnings - betAmt });
+  const handleGamble = (game: string) => {
+    const winnings = store.gamble(game, Number(bet));
+    if (winnings > Number(bet)) {
+      setResult(`🎉 Won $${(winnings - Number(bet)).toLocaleString()}!`);
+    } else if (winnings === Number(bet)) {
+      setResult('🤝 Break even');
+    } else {
+      setResult(`💸 Lost $${Number(bet).toLocaleString()}`);
+    }
   };
 
   return (
     <SectionCard title="🎰 Casino">
-      <p className="text-sm text-gray-400 mb-3">Try your luck at various games. Cash: <span className="text-green-400">${store.cash.toLocaleString()}</span></p>
-      
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-        {casinoGames.map(game => (
-          <button key={game.id} onClick={() => setSelectedGame(game.id)}
-            className={`p-2 rounded text-center text-xs transition-colors ${selectedGame === game.id ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-            <p className="font-bold">{game.name}</p>
-            <p className="text-[10px] text-gray-400">{game.description}</p>
-          </button>
-        ))}
-      </div>
-
-      {selectedGame && (
-        <div className="bg-gray-700 rounded p-3 space-y-2">
-          <div className="flex gap-2 items-center">
-            <label className="text-xs text-gray-400">Bet:</label>
-            <input type="number" value={bet} onChange={e => setBet(e.target.value)} className="flex-1 px-2 py-1 bg-gray-600 rounded text-sm text-white" />
-          </div>
-          {selectedGame === 'roulette' && (
-            <div className="flex gap-2">
-              {['red', 'black', 'green'].map(c => (
-                <button key={c} onClick={() => setRouletteChoice(c)}
-                  className={`px-3 py-1 rounded text-xs capitalize ${rouletteChoice === c ? 'bg-amber-600' : 'bg-gray-600'} text-white`}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-          <button onClick={handleGamble} className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-sm">
-            Play!
-          </button>
-          {result && (
-            <p className={`text-center text-sm ${result.win ? 'text-green-400' : 'text-red-400'}`}>
-              {result.win ? `You won $${result.amount}!` : `You lost $${Math.abs(result.amount)}!`}
-            </p>
-          )}
+      <div className="space-y-3">
+        <input type="number" value={bet} onChange={e => setBet(e.target.value)} placeholder="Bet amount" className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white" />
+        {result && <p className="text-center text-sm font-bold">{result}</p>}
+        <div className="grid grid-cols-2 gap-2">
+          {casinoGames.map(game => (
+            <button key={game.id} onClick={() => handleGamble(game.id)} disabled={store.cash < Number(bet)}
+              className="py-2 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs">
+              {game.name}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
     </SectionCard>
   );
 }
@@ -819,63 +705,25 @@ function ItemMarketLocation() {
 }
 
 function AuctionLocation() {
-  const store = useGameStore();
-  const [message, setMessage] = useState('');
-
-  const auctionItems = [
-    { id: 'rare_pistol', name: 'Rare Golden Pistol', currentBid: 15000, bids: 5, timeLeft: '2h 30m', category: 'Weapon' },
-    { id: 'rare_armor', name: 'Military Grade Armor', currentBid: 25000, bids: 3, timeLeft: '5h 15m', category: 'Armor' },
-    { id: 'xanax_bulk', name: 'Xanax x10', currentBid: 12000, bids: 8, timeLeft: '1h 45m', category: 'Drug' },
-    { id: 'rare_car', name: 'Vintage Sports Car', currentBid: 50000, bids: 2, timeLeft: '12h 00m', category: 'Vehicle' },
-  ];
-
   return (
     <SectionCard title="🔨 Auction House">
       <p className="text-sm text-gray-400 mb-3">Bid on rare items from other players.</p>
-      <div className="space-y-2">
-        {auctionItems.map(item => (
-          <div key={item.id} className="bg-gray-700 rounded p-3 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-bold text-white">{item.name}</p>
-              <p className="text-[10px] text-gray-400">{item.category} • {item.bids} bids • {item.timeLeft} left</p>
-            </div>
-            <div className="text-right">
-              <p className="text-green-400 font-bold text-sm">${item.currentBid.toLocaleString()}</p>
-              <button onClick={() => { setMessage(`Bid placed on ${item.name}!`); }}
-                className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] mt-1">Bid</button>
-            </div>
-          </div>
-        ))}
+      <div className="bg-gray-700 rounded p-4 text-center">
+        <p className="text-gray-500 text-sm">Auction feature coming soon</p>
       </div>
-      {message && <p className="text-green-400 text-xs mt-2">{message}</p>}
     </SectionCard>
   );
 }
 
 function PointsMarketLocation() {
   const store = useGameStore();
-  const [buyAmt, setBuyAmt] = useState('');
-  const pointPrice = 50000; // $50k per point
-
   return (
     <SectionCard title="💎 Points Market">
-      <p className="text-sm text-gray-400 mb-3">Buy points with cash. Current price: <span className="text-green-400">${pointPrice.toLocaleString()}/point</span></p>
-      <div className="bg-gray-700 rounded p-3 mb-3 text-center">
+      <p className="text-sm text-gray-400 mb-3">Buy points with cash or sell points for cash.</p>
+      <div className="bg-gray-700 rounded p-3 text-center">
         <p className="text-xs text-gray-400">Your Points</p>
-        <p className="text-2xl font-bold text-purple-400">{store.points}</p>
+        <p className="text-xl font-bold text-purple-400">{store.points}</p>
       </div>
-      <div className="flex gap-2">
-        <input type="number" value={buyAmt} onChange={e => setBuyAmt(e.target.value)} placeholder="Quantity" className="flex-1 px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white" />
-        <button onClick={() => {
-          const amt = Number(buyAmt);
-          const cost = amt * pointPrice;
-          if (store.cash >= cost) {
-            useGameStore.setState({ cash: store.cash - cost, points: store.points + amt });
-          }
-          setBuyAmt('');
-        }} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded text-sm">Buy Points</button>
-      </div>
-      <p className="text-xs text-gray-500 mt-2">Points are used for: Bazaar, Display Cases, Racing License, Merits, and more.</p>
     </SectionCard>
   );
 }
@@ -888,26 +736,13 @@ function HospitalLocation() {
       {store.inHospital ? (
         <div className="space-y-3">
           <div className="bg-red-900/30 border border-red-800 rounded p-4 text-center">
-            <p className="text-red-300 font-bold text-lg">You're Hospitalized</p>
+            <p className="text-red-300 font-bold text-lg">You're in the Hospital</p>
             <p className="text-gray-400 text-sm mt-1">Time remaining: {store.hospitalTimer} ticks</p>
-            <p className="text-xs text-gray-500 mt-2">Life: {store.life}/{store.maxLife}</p>
           </div>
           <button onClick={() => store.revivePlayer()} disabled={store.energy < 10}
-            className="w-full py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded font-medium text-sm">
+            className="w-full py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
             Self-Revive (10 Energy)
           </button>
-          <div className="bg-gray-700 rounded p-3">
-            <p className="text-xs text-gray-400 mb-2">Medical supplies needed:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {items.filter(i => i.category === 'Medical').map(item => (
-                <button key={item.id} onClick={() => store.buyItem(item.id)}
-                  className="bg-gray-600 hover:bg-gray-500 rounded p-2 text-xs text-left">
-                  <p className="text-white font-medium">{item.name}</p>
-                  <p className="text-green-400">+{item.effectValue} HP • ${item.price}</p>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       ) : (
         <div className="bg-green-900/30 border border-green-800 rounded p-4 text-center">
@@ -930,19 +765,11 @@ function JailLocation() {
             <p className="text-yellow-300 font-bold text-lg">You're in Jail</p>
             <p className="text-gray-400 text-sm mt-1">Time remaining: {store.jailTimer} ticks</p>
           </div>
-          <p className="text-xs text-gray-500 text-center">Wait for your sentence to end or get busted by another player.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="bg-green-900/30 border border-green-800 rounded p-4 text-center">
-            <p className="text-green-300 font-bold">Not in Jail</p>
-            <p className="text-gray-400 text-sm mt-1">You're a free citizen.</p>
-          </div>
-          <div className="bg-gray-700 rounded p-3">
-            <p className="text-xs text-gray-400 mb-2">Jail Records</p>
-            <p className="text-xs text-gray-500">Times jailed: {store.crimeLogs.filter(l => !l.success).length}</p>
-            <p className="text-xs text-gray-500">Successful busts: 0</p>
-          </div>
+        <div className="bg-green-900/30 border border-green-800 rounded p-4 text-center">
+          <p className="text-green-300 font-bold">Not in Jail</p>
+          <p className="text-gray-400 text-sm mt-1">You're a free citizen.</p>
         </div>
       )}
     </SectionCard>
@@ -954,7 +781,7 @@ function MuseumLocation() {
 
   return (
     <SectionCard title="🏛️ Museum & Collections">
-      <p className="text-sm text-gray-400 mb-3">Collect rare items and artifacts. Complete sets for rewards.</p>
+      <p className="text-sm text-gray-400 mb-3">Collect rare items and artifacts.</p>
       <div className="space-y-2">
         {collections.map(col => {
           const owned = ext.collections.includes(col.id);
@@ -964,7 +791,6 @@ function MuseumLocation() {
                 <div>
                   <p className="text-sm font-bold text-white">{col.icon} {col.name}</p>
                   <p className="text-[10px] text-gray-400">{col.description}</p>
-                  <p className="text-[10px] text-amber-400">Value: ${col.value.toLocaleString()}</p>
                 </div>
                 {owned ? (
                   <span className="text-green-400 text-xs font-bold">✓ Owned</span>
@@ -982,7 +808,6 @@ function MuseumLocation() {
 
 function DumpLocation() {
   const store = useGameStore();
-  const ext = useExtendedStore();
   const [message, setMessage] = useState('');
 
   const handleSearch = () => {
@@ -1000,15 +825,15 @@ function DumpLocation() {
       }
       setMessage(`Found: ${randomItem.name}!`);
     } else {
-      setMessage('Found nothing useful this time.');
+      setMessage('Found nothing useful.');
     }
   };
 
   return (
     <SectionCard title="🗑️ Dump">
-      <p className="text-sm text-gray-400 mb-3">Search through the dump for discarded items. Costs 1 energy per search.</p>
+      <p className="text-sm text-gray-400 mb-3">Search through the dump for items. Costs 1 energy.</p>
       <button onClick={handleSearch} disabled={store.energy < 1}
-        className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded font-medium text-sm">
+        className="w-full py-2 bg-orange-700 hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
         Search Dump (1 Energy)
       </button>
       {message && <p className="text-sm text-center mt-2 text-amber-300">{message}</p>}
@@ -1017,41 +842,11 @@ function DumpLocation() {
 }
 
 function ShopsLocation() {
-  const store = useGameStore();
-  const [shop, setShop] = useState('general');
-
-  const shopItems: Record<string, typeof items> = {
-    general: items.filter(i => ['Candy', 'Medical', 'Booster'].includes(i.category)),
-    gun: items.filter(i => ['Melee', 'Primary', 'Secondary', 'Temporary'].includes(i.category)),
-    pharmacy: items.filter(i => i.category === 'Drug'),
-    armor: items.filter(i => i.category === 'Armor'),
-    clothing: [],
-  };
-
   return (
-    <SectionCard title="🛒 City Shops">
-      <div className="flex flex-wrap gap-1 mb-3">
-        {Object.keys(shopItems).map(s => (
-          <button key={s} onClick={() => setShop(s)}
-            className={`px-2 py-1 rounded text-xs capitalize ${shop === s ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-400'}`}>
-            {s === 'gun' ? 'Gun Shop' : s === 'general' ? 'General Store' : s}
-          </button>
-        ))}
-      </div>
-      <div className="space-y-1 max-h-80 overflow-y-auto">
-        {(shopItems[shop] || []).map(item => (
-          <div key={item.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
-            <span className="text-white">{item.name}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-green-400">${item.price}</span>
-              <button onClick={() => store.buyItem(item.id)} disabled={store.cash < item.price}
-                className="px-2 py-0.5 bg-green-700 hover:bg-green-600 disabled:bg-gray-600 text-white rounded">Buy</button>
-            </div>
-          </div>
-        ))}
-        {(!shopItems[shop] || shopItems[shop].length === 0) && (
-          <p className="text-gray-500 text-center py-4">This shop is currently empty.</p>
-        )}
+    <SectionCard title="🛒 Shops">
+      <p className="text-sm text-gray-400 mb-3">Various shops around the city.</p>
+      <div className="bg-gray-700 rounded p-4 text-center">
+        <p className="text-gray-500 text-sm">Visit the Item Market for shopping</p>
       </div>
     </SectionCard>
   );
@@ -1063,7 +858,6 @@ function PostOfficeLocation() {
       <p className="text-sm text-gray-400 mb-3">Send items and messages to other players.</p>
       <div className="bg-gray-700 rounded p-4 text-center">
         <p className="text-gray-500 text-sm">Send items to friends and faction members</p>
-        <p className="text-xs text-gray-600 mt-2">Cost: $500 per item sent</p>
       </div>
     </SectionCard>
   );
@@ -1079,252 +873,106 @@ function ChurchLocation() {
     setMessage('You feel blessed. +5 Happy');
   };
 
-  const confess = () => {
-    if (store.nerve < 1) { setMessage('Not enough nerve!'); return; }
-    useGameStore.setState({ nerve: store.nerve - 1, crimeSkill: store.crimeSkill - 0.05 });
-    setMessage('You confessed your sins. Crime skill slightly decreased.');
-  };
-
   return (
     <SectionCard title="⛪ Church">
       <p className="text-sm text-gray-400 mb-3">Find peace and forgiveness in Torn City.</p>
-      <div className="space-y-2">
-        <button onClick={pray} disabled={store.energy < 1}
-          className="w-full py-2 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
-          Pray (1 Energy, +5 Happy)
-        </button>
-        <button onClick={confess} disabled={store.nerve < 1}
-          className="w-full py-2 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
-          Confess Sins (1 Nerve, -Crime Skill)
-        </button>
-      </div>
+      <button onClick={pray} disabled={store.energy < 1}
+        className="w-full py-2 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
+        Pray (1 Energy, +5 Happy)
+      </button>
       {message && <p className="text-sm text-center mt-2 text-blue-300">{message}</p>}
     </SectionCard>
   );
 }
 
 function CommunityLocation() {
-  const store = useGameStore();
-  const [tab, setTab] = useState<'events' | 'leaderboard' | 'forums'>('events');
-  
-  // Simulated leaderboard data
-  const leaderboard = [
-    { rank: 1, name: 'ShadowKing', level: 85, battles: 1247 },
-    { rank: 2, name: 'NightHawk', level: 78, battles: 1089 },
-    { rank: 3, name: 'IronFist', level: 72, battles: 956 },
-    { rank: 4, name: 'GhostRider', level: 68, battles: 834 },
-    { rank: 5, name: 'ThunderBolt', level: 65, battles: 721 },
-  ];
-  
-  // Simulated forum posts
-  const forumPosts = [
-    { title: 'Best gym for beginners?', author: 'Newbie123', replies: 23 },
-    { title: 'Faction recruitment - Dark Shadows', author: 'LeaderX', replies: 15 },
-    { title: 'Stock market tips', author: 'TraderPro', replies: 42 },
-    { title: 'Looking for OC team', author: 'CriminalMind', replies: 8 },
-  ];
-  
   return (
     <SectionCard title="👥 Community Center">
-      <div className="flex gap-2 mb-3">
-        <button onClick={() => setTab('events')} className={`px-3 py-1 rounded text-xs ${tab === 'events' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Events</button>
-        <button onClick={() => setTab('leaderboard')} className={`px-3 py-1 rounded text-xs ${tab === 'leaderboard' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Leaderboard</button>
-        <button onClick={() => setTab('forums')} className={`px-3 py-1 rounded text-xs ${tab === 'forums' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Forums</button>
+      <p className="text-sm text-gray-400 mb-3">Community events and announcements.</p>
+      <div className="bg-gray-700 rounded p-4 text-center">
+        <p className="text-gray-500 text-sm">Community features coming soon</p>
       </div>
-      
-      {tab === 'events' && (
-        <div className="space-y-2">
-          <div className="bg-gradient-to-r from-amber-900/30 to-amber-800/30 border border-amber-700 rounded p-3">
-            <p className="text-xs text-amber-400 font-bold">📢 City Event - Active Now!</p>
-            <p className="text-xs text-gray-300 mt-1">Weekly XSS competition happening now! Top fighters win cash prizes.</p>
-            <p className="text-[10px] text-gray-500 mt-1">Ends in: 2d 14h 32m</p>
-          </div>
-          <div className="bg-gradient-to-r from-red-900/30 to-red-800/30 border border-red-700 rounded p-3">
-            <p className="text-xs text-red-400 font-bold">🎉 Holiday Event</p>
-            <p className="text-xs text-gray-300 mt-1">Special holiday items available in shops. Limited time only!</p>
-            <p className="text-[10px] text-gray-500 mt-1">Ends in: 5d 8h 15m</p>
-          </div>
-          <div className="bg-gradient-to-r from-purple-900/30 to-purple-800/30 border border-purple-700 rounded p-3">
-            <p className="text-xs text-purple-400 font-bold">🏆 Tournament</p>
-            <p className="text-xs text-gray-300 mt-1">Faction warfare tournament starting soon. Register your faction!</p>
-            <p className="text-[10px] text-gray-500 mt-1">Starts in: 1d 6h 45m</p>
-          </div>
-        </div>
-      )}
-      
-      {tab === 'leaderboard' && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-400 mb-2">Top Fighters This Week</p>
-          {leaderboard.map(player => (
-            <div key={player.rank} className="flex items-center justify-between bg-gray-700 rounded p-2">
-              <div className="flex items-center gap-2">
-                <span className={`text-sm font-bold ${player.rank === 1 ? 'text-yellow-400' : player.rank === 2 ? 'text-gray-300' : player.rank === 3 ? 'text-amber-600' : 'text-gray-500'}`}>
-                  #{player.rank}
-                </span>
-                <div>
-                  <p className="text-xs text-white font-medium">{player.name}</p>
-                  <p className="text-[10px] text-gray-500">Level {player.level}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-green-400 font-bold">{player.battles}</p>
-                <p className="text-[10px] text-gray-500">battles</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {tab === 'forums' && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-400 mb-2">Recent Forum Posts</p>
-          {forumPosts.map((post, idx) => (
-            <div key={idx} className="bg-gray-700 rounded p-2">
-              <p className="text-xs text-white font-medium">{post.title}</p>
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-[10px] text-gray-500">by {post.author}</p>
-                <p className="text-[10px] text-gray-500">{post.replies} replies</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </SectionCard>
   );
 }
 
-// ============ JOBS PAGE ============
+// Continue with other pages...
 function JobsPage() {
   const store = useGameStore();
-  const ext = useExtendedStore();
-  const [tab, setTab] = useState<'jobs' | 'company'>('jobs');
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-amber-400">💼 Jobs & Company</h2>
-      
-      <div className="flex gap-2">
-        <button onClick={() => setTab('jobs')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'jobs' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>City Jobs</button>
-        <button onClick={() => setTab('company')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'company' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Your Company</button>
-      </div>
+      <h2 className="text-xl font-bold text-amber-400">💼 Jobs</h2>
+      <SectionCard title="Available Jobs">
+        <div className="space-y-2">
+          {jobs.map(job => {
+            const canApply = store.level >= job.levelReq && 
+              (!job.statReq.manualLabor || store.manualLabor >= job.statReq.manualLabor) &&
+              (!job.statReq.intelligence || store.intelligence >= job.statReq.intelligence) &&
+              (!job.statReq.endurance || store.endurance >= job.statReq.endurance);
+            const isCurrentJob = store.currentJob === job.id;
 
-      {tab === 'jobs' && (
-        <div className="space-y-3">
-          {store.currentJob && (
-            <SectionCard>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-bold text-white">Current Job: {jobs.find(j => j.id === store.currentJob)?.name}</p>
-                  <p className="text-xs text-gray-400">Salary: ${jobs.find(j => j.id === store.currentJob)?.salary.toLocaleString()}/shift</p>
-                </div>
-                <button onClick={() => store.workJob()} disabled={store.energy < 5}
-                  className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
-                  Work (5 EN)
-                </button>
-              </div>
-            </SectionCard>
-          )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {jobs.map(job => {
-              const meetsReqs = store.level >= job.levelReq &&
-                (!job.statReq.manualLabor || store.manualLabor >= job.statReq.manualLabor) &&
-                (!job.statReq.intelligence || store.intelligence >= job.statReq.intelligence) &&
-                (!job.statReq.endurance || store.endurance >= job.statReq.endurance);
-              const isCurrent = store.currentJob === job.id;
-              
-              return (
-                <div key={job.id} className={`bg-gray-800 rounded-lg p-3 border ${isCurrent ? 'border-green-700' : meetsReqs ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-bold text-white">{job.name}</p>
-                      <p className="text-[10px] text-gray-400">{job.company} • Lvl {job.levelReq}+</p>
-                      <p className="text-xs text-green-400">${job.salary.toLocaleString()}/shift</p>
-                      <div className="flex gap-1 mt-1">
-                        {job.statReq.manualLabor ? <span className="text-[9px] bg-orange-900/50 text-orange-300 px-1 rounded">ML:{job.statReq.manualLabor}</span> : null}
-                        {job.statReq.intelligence ? <span className="text-[9px] bg-cyan-900/50 text-cyan-300 px-1 rounded">INT:{job.statReq.intelligence}</span> : null}
-                        {job.statReq.endurance ? <span className="text-[9px] bg-emerald-900/50 text-emerald-300 px-1 rounded">END:{job.statReq.endurance}</span> : null}
-                      </div>
-                    </div>
-                    {!isCurrent && (
-                      <button onClick={() => meetsReqs && store.applyJob(job.id)} disabled={!meetsReqs}
-                        className="px-2 py-1 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-[10px]">
-                        Apply
-                      </button>
-                    )}
-                    {isCurrent && <span className="text-green-400 text-[10px] font-bold">✓ Active</span>}
+            return (
+              <div key={job.id} className={`bg-gray-700 rounded p-3 ${isCurrentJob ? 'border-2 border-amber-600' : ''}`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-bold text-white">{job.name}</p>
+                    <p className="text-[10px] text-gray-400">{job.company} • Lvl {job.levelReq}+</p>
+                    <p className="text-xs text-green-400 mt-1">${job.salary}/shift</p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {tab === 'company' && (
-        <div className="space-y-3">
-          {ext.companyOwned ? (
-            <SectionCard title={`🏢 ${ext.companyName}`}>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-gray-700 rounded p-2 text-center">
-                  <p className="text-xs text-gray-400">Type</p>
-                  <p className="text-white font-bold">{ext.companyType}</p>
-                </div>
-                <div className="bg-gray-700 rounded p-2 text-center">
-                  <p className="text-xs text-gray-400">Stars</p>
-                  <p className="text-amber-400 font-bold">{'⭐'.repeat(ext.companyStars)}</p>
-                </div>
-                <div className="bg-gray-700 rounded p-2 text-center">
-                  <p className="text-xs text-gray-400">Employees</p>
-                  <p className="text-white font-bold">{ext.companyEmployees}/10</p>
-                </div>
-                <div className="bg-gray-700 rounded p-2 text-center">
-                  <p className="text-xs text-gray-400">Daily Profit</p>
-                  <p className="text-green-400 font-bold">${ext.companyProfit.toLocaleString()}</p>
+                  {isCurrentJob ? (
+                    <span className="text-xs text-amber-400 font-bold">Current Job</span>
+                  ) : (
+                    <button onClick={() => store.applyJob(job.id)} disabled={!canApply}
+                      className="px-3 py-1 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-600 text-white rounded text-xs">
+                      Apply
+                    </button>
+                  )}
                 </div>
               </div>
-            </SectionCard>
-          ) : (
-            <SectionCard title="🏢 Start a Company">
-              <p className="text-sm text-gray-400 mb-3">Own one of 39 company types. Requires $500,000 and Level 10+.</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-                {companies.slice(0, 9).map(comp => (
-                  <div key={comp.id} className="bg-gray-700 rounded p-2 text-center">
-                    <p className="text-xs font-bold text-white">{comp.icon} {comp.name}</p>
-                    <p className="text-[10px] text-gray-400">{comp.type}</p>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => {
-                if (store.cash >= 500000 && store.level >= 10) {
-                  ext.startCompany('My Company', companies[0].type);
-                }
-              }} disabled={store.cash < 500000 || store.level < 10}
-                className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm font-medium">
-                Buy Company ($500,000)
-              </button>
-            </SectionCard>
-          )}
+            );
+          })}
         </div>
+      </SectionCard>
+      {store.currentJob && (
+        <SectionCard>
+          <button onClick={() => store.workJob()} disabled={store.energy < 5}
+            className="w-full py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
+            Work Shift (5 Energy)
+          </button>
+        </SectionCard>
       )}
     </div>
   );
 }
 
-// ============ GYM PAGE ============
 function GymPage() {
   const store = useGameStore();
   const [selectedGym, setSelectedGym] = useState('basic');
   const [message, setMessage] = useState('');
+  const [lastGain, setLastGain] = useState<{stat: string; gain: number} | null>(null);
 
   const gym = gyms.find(g => g.id === selectedGym);
   const canUseGym = gym && store.level >= gym.levelReq && (!gym.statReq || Math.max(store.strength, store.speed, store.defense, store.dexterity) >= gym.statReq);
 
   const handleTrain = (stat: 'strength' | 'speed' | 'defense' | 'dexterity') => {
-    if (store.energy < 5) { setMessage('Not enough energy!'); return; }
-    if (!canUseGym) { setMessage('Requirements not met for this gym!'); return; }
+    if (store.energy < 5) { 
+      setMessage('❌ Not enough energy!'); 
+      setTimeout(() => setMessage(''), 2000);
+      return; 
+    }
+    if (!canUseGym) { 
+      setMessage('❌ Requirements not met for this gym!'); 
+      setTimeout(() => setMessage(''), 2000);
+      return; 
+    }
+    
+    const prevStat = store[stat];
     store.trainStat(stat, selectedGym);
-    setMessage(`Trained ${stat}!`);
+    const gain = store[stat] - prevStat;
+    setLastGain({ stat, gain });
+    setMessage(`✅ Trained ${stat}! +${gain}`);
+    setTimeout(() => { setMessage(''); setLastGain(null); }, 2000);
   };
 
   return (
@@ -1332,7 +980,6 @@ function GymPage() {
       <h2 className="text-xl font-bold text-amber-400">💪 Gym</h2>
       <p className="text-gray-400 text-sm">Train your battle stats. Each session costs 5 energy.</p>
 
-      {/* Gym Selection */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {gyms.map(g => {
           const available = store.level >= g.levelReq && (!g.statReq || Math.max(store.strength, store.speed, store.defense, store.dexterity) >= g.statReq);
@@ -1350,7 +997,6 @@ function GymPage() {
         })}
       </div>
 
-      {/* Training Buttons */}
       <SectionCard title={`Training at: ${gym?.name || 'Basic Gym'} (x${gym?.multiplier || 1})`}>
         <div className="grid grid-cols-2 gap-3">
           {([
@@ -1373,11 +1019,11 @@ function GymPage() {
   );
 }
 
-// ============ CRIMES PAGE (Crimes + Combat + Organized Crime) ============
 function CrimesPage() {
   const store = useGameStore();
   const ext = useExtendedStore();
   const [tab, setTab] = useState<'crimes' | 'combat' | 'organized'>('crimes');
+  const [lastCrimeResult, setLastCrimeResult] = useState<{success: boolean; reward?: number; jailed?: boolean} | null>(null);
 
   return (
     <div className="space-y-4">
@@ -1395,11 +1041,39 @@ function CrimesPage() {
             <span className="text-gray-400">Crime Skill: <span className="text-amber-400 font-bold">{store.crimeSkill.toFixed(1)}</span></span>
             <span className="text-gray-400">Nerve: <span className="text-orange-400 font-bold">{store.nerve}/{store.maxNerve}</span></span>
           </div>
+
+          {/* Last Crime Result */}
+          {lastCrimeResult && (
+            <div className={`rounded-lg p-3 border ${lastCrimeResult.success ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700'}`}>
+              {lastCrimeResult.success ? (
+                <p className="text-green-300 text-sm font-bold">✅ Success! Earned ${lastCrimeResult.reward?.toLocaleString()}</p>
+              ) : (
+                <p className="text-red-300 text-sm font-bold">❌ Failed! {lastCrimeResult.jailed ? 'You were sent to jail!' : 'Better luck next time.'}</p>
+              )}
+            </div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {crimes.map(crime => {
               const canDo = store.nerve >= crime.nerveCost && store.level >= crime.levelReq && !store.inHospital && !store.inJail;
               const successChance = Math.min(95, Math.max(5, 50 + store.crimeSkill * 2 - crime.difficulty + store.dexterity * 0.5));
+              
+              const handleCrime = () => {
+                if (!canDo) return;
+                const prevJail = store.inJail;
+                const prevCash = store.cash;
+                store.commitCrime(crime.id);
+                
+                // Check result after commit
+                setTimeout(() => {
+                  const newState = useGameStore.getState();
+                  const success = newState.cash > prevCash;
+                  const jailed = !prevJail && newState.inJail;
+                  const reward = success ? newState.cash - prevCash : 0;
+                  setLastCrimeResult({ success, reward, jailed });
+                  setTimeout(() => setLastCrimeResult(null), 3000);
+                }, 100);
+              };
               
               return (
                 <div key={crime.id} className={`bg-gray-800 rounded-lg p-3 border ${canDo ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
@@ -1413,7 +1087,7 @@ function CrimesPage() {
                         <span className="text-blue-400">{successChance.toFixed(0)}%</span>
                       </div>
                     </div>
-                    <button onClick={() => canDo && store.commitCrime(crime.id)} disabled={!canDo}
+                    <button onClick={handleCrime} disabled={!canDo}
                       className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs font-medium">
                       Commit
                     </button>
@@ -1460,26 +1134,41 @@ function CrimesPage() {
   );
 }
 
-// ============ COMBAT PAGE (Added to Crimes section) ============
 function CombatSection() {
   const store = useGameStore();
   const [message, setMessage] = useState('');
-  const [combatResult, setCombatResult] = useState<string | null>(null);
+  const [combatResult, setCombatResult] = useState<{won: boolean; enemy: string; type: string; hospitalized?: boolean} | null>(null);
 
   const handleAttack = (enemyId: string, type: 'mug' | 'hospitalize' | 'leave') => {
     if (store.energy < 5) {
-      setMessage('Not enough energy!');
+      setMessage('❌ Not enough energy!');
+      setTimeout(() => setMessage(''), 2000);
       return;
     }
     if (store.inHospital || store.inJail) {
-      setMessage('Cannot attack while in hospital or jail!');
+      setMessage('❌ Cannot attack while in hospital or jail!');
+      setTimeout(() => setMessage(''), 2000);
       return;
     }
     
-    store.attackPlayer(enemyId, type);
     const enemy = npcEnemies.find(e => e.id === enemyId);
-    setCombatResult(`Attacked ${enemy?.name} (${type})`);
-    setTimeout(() => setCombatResult(null), 3000);
+    const prevHospitalized = store.inHospital;
+    
+    store.attackPlayer(enemyId, type);
+    
+    // Check result after attack
+    setTimeout(() => {
+      const newState = useGameStore.getState();
+      const won = !newState.inHospital || prevHospitalized;
+      const hospitalized = !prevHospitalized && newState.inHospital;
+      setCombatResult({ 
+        won: !hospitalized, 
+        enemy: enemy?.name || 'Unknown', 
+        type,
+        hospitalized 
+      });
+      setTimeout(() => setCombatResult(null), 4000);
+    }, 100);
   };
 
   return (
@@ -1489,33 +1178,43 @@ function CombatSection() {
         <span className="text-gray-400">Energy: <span className="text-green-400 font-bold">{store.energy}/{store.maxEnergy}</span></span>
       </div>
 
-      {combatResult && (
+      {message && (
         <div className="bg-blue-900/30 border border-blue-800 rounded p-2 text-center">
-          <p className="text-blue-300 text-sm">{combatResult}</p>
+          <p className="text-blue-300 text-sm">{message}</p>
         </div>
       )}
 
-      {message && (
-        <div className="bg-red-900/30 border border-red-800 rounded p-2 text-center">
-          <p className="text-red-300 text-sm">{message}</p>
+      {/* Combat Result */}
+      {combatResult && (
+        <div className={`rounded-lg p-3 border ${combatResult.won ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700'}`}>
+          {combatResult.won ? (
+            <div>
+              <p className="text-green-300 text-sm font-bold">✅ Victory!</p>
+              <p className="text-xs text-gray-400">Defeated {combatResult.enemy} ({combatResult.type})</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-red-300 text-sm font-bold">❌ Defeated!</p>
+              <p className="text-xs text-gray-400">Lost to {combatResult.enemy}</p>
+              {combatResult.hospitalized && (
+                <p className="text-xs text-red-400 mt-1">🏥 You were sent to the hospital!</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {npcEnemies.map(enemy => {
           const canAttack = store.energy >= 5 && !store.inHospital && !store.inJail;
-          const powerDiff = (store.strength + store.speed + store.defense + store.dexterity) - (enemy.strength + enemy.speed + enemy.defense + enemy.dexterity);
-          const difficulty = powerDiff > 100 ? 'Easy' : powerDiff > 0 ? 'Medium' : powerDiff > -100 ? 'Hard' : 'Very Hard';
-          const diffColor = powerDiff > 100 ? 'text-green-400' : powerDiff > 0 ? 'text-yellow-400' : powerDiff > -100 ? 'text-orange-400' : 'text-red-400';
           
           return (
             <div key={enemy.id} className={`bg-gray-800 rounded-lg p-3 border ${canAttack ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <p className="text-sm font-bold text-white">{enemy.name}</p>
-                  <p className="text-[10px] text-gray-400">Level {enemy.level} • {difficulty}</p>
+                  <p className="text-[10px] text-gray-400">Level {enemy.level}</p>
                 </div>
-                <span className={`text-[10px] font-bold ${diffColor}`}>{difficulty}</span>
               </div>
               <div className="grid grid-cols-2 gap-1 text-[10px] mb-2">
                 <span className="text-red-400">STR: {enemy.strength}</span>
@@ -1546,10 +1245,8 @@ function CombatSection() {
   );
 }
 
-// ============ TRAVEL PAGE ============
 function TravelPage() {
   const store = useGameStore();
-  const ext = useExtendedStore();
   const [message, setMessage] = useState('');
 
   if (store.level < 15) {
@@ -1578,11 +1275,6 @@ function TravelPage() {
             <div key={dest.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
               <p className="text-sm font-bold text-white">{dest.name}</p>
               <p className="text-[10px] text-gray-400">Flight: {dest.flightTime} min • ${dest.cost}</p>
-              <div className="flex flex-wrap gap-0.5 mt-1">
-                {dest.items.map(item => (
-                  <span key={item} className="text-[9px] bg-gray-700 px-1 rounded text-gray-400">{item}</span>
-                ))}
-              </div>
               <button onClick={() => { store.travel(dest.id); setMessage(`Flying to ${dest.name}!`); }}
                 className="mt-2 w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs">
                 Fly (${dest.cost})
@@ -1592,71 +1284,11 @@ function TravelPage() {
         </div>
       )}
 
-      {/* Racing (available while traveling or at home) */}
-      {ext.racingLicense && (
-        <SectionCard title="🏎️ Racing" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs text-gray-400 mb-2">Your Car: {ext.racingCar ? cars.find(c => c.id === ext.racingCar)?.name : 'None'}</p>
-              <p className="text-xs text-gray-400">Racing Skill: {ext.racingSkill}</p>
-              <div className="space-y-1 mt-2">
-                {raceTracks.slice(0, 4).map(track => (
-                  <button key={track.id} onClick={() => ext.startRace(track.id)}
-                    className="w-full text-left bg-gray-700 hover:bg-gray-600 rounded p-2 text-xs">
-                    <span className="text-white">{track.name}</span>
-                    <span className="text-gray-400 ml-2">({track.difficulty})</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-2">Available Cars:</p>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {cars.map(car => (
-                  <div key={car.id} className="flex justify-between bg-gray-700/50 rounded p-2 text-xs">
-                    <span className="text-white">{car.name}</span>
-                    <button onClick={() => ext.buyCar(car.id)} disabled={store.cash < car.price}
-                      className="text-green-400">${car.price.toLocaleString()}</button>
-                  </div>
-                ))}
-              </div>
-              {!ext.racingLicense && (
-                <button onClick={() => {
-                  if (store.points >= 1) {
-                    useExtendedStore.setState({ racingLicense: true });
-                    useGameStore.setState({ points: store.points - 1 });
-                  }
-                }} className="mt-2 w-full py-1 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs">
-                  Buy Racing License (1 Point)
-                </button>
-              )}
-            </div>
-          </div>
-        </SectionCard>
-      )}
-
-      {/* Hunting (South Africa) */}
-      {store.travelDestination === 'south_africa' && !store.isTraveling && (
-        <SectionCard title="🦁 Hunting" className="mt-4">
-          <p className="text-xs text-gray-400 mb-2">Hunt animals in South Africa for cash and experience.</p>
-          <div className="grid grid-cols-2 gap-2">
-            {huntAnimals.map(animal => (
-              <button key={animal.id} onClick={() => ext.hunt(animal.id)} disabled={store.energy < animal.energyCost}
-                className="bg-gray-700 hover:bg-gray-600 disabled:opacity-50 rounded p-2 text-xs text-left">
-                <p className="text-white font-bold">{animal.icon} {animal.name}</p>
-                <p className="text-gray-400">{animal.energyCost} EN • ${animal.minReward}-${animal.maxReward}</p>
-              </button>
-            ))}
-          </div>
-        </SectionCard>
-      )}
-
       {message && <p className="text-blue-300 text-sm text-center">{message}</p>}
     </div>
   );
 }
 
-// ============ EDUCATION PAGE ============
 function EducationPage() {
   const store = useGameStore();
   const [filter, setFilter] = useState('all');
@@ -1688,21 +1320,19 @@ function EducationPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {filtered.map(course => {
-          const canStart = !store.inEducation && store.cash >= course.cost && store.level >= course.levelReq && !store.inHospital && !store.inJail;
+          const canStart = !store.inEducation && store.cash >= course.cost && store.level >= course.levelReq;
           return (
             <div key={course.id} className={`bg-gray-800 rounded-lg p-3 border ${canStart ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-bold text-white">{course.name}</p>
-                  <p className="text-[10px] text-gray-400">{course.category} • {course.duration}h • Lvl {course.levelReq}+</p>
-                  {course.statBonus && <p className="text-[10px] text-green-400">+{course.bonusAmount} {course.statBonus}</p>}
-                  <p className="text-xs text-green-400 mt-1">${course.cost.toLocaleString()}</p>
-                </div>
-                <button onClick={() => canStart && store.startEducation(course.id)} disabled={!canStart}
-                  className="px-2 py-1 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs">
-                  Enroll
-                </button>
+              <p className="text-sm font-bold text-white">{course.name}</p>
+              <p className="text-[10px] text-gray-400">{course.category} • Lvl {course.levelReq}+</p>
+              <div className="flex gap-2 mt-1 text-[10px]">
+                <span className="text-green-400">${course.cost.toLocaleString()}</span>
+                <span className="text-blue-400">{course.duration} ticks</span>
               </div>
+              <button onClick={() => store.startEducation(course.id)} disabled={!canStart}
+                className="mt-2 w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs">
+                Enroll
+              </button>
             </div>
           );
         })}
@@ -1711,32 +1341,21 @@ function EducationPage() {
   );
 }
 
-// ============ PROPERTIES PAGE ============
 function PropertiesPage() {
   const store = useGameStore();
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">🏠 Properties</h2>
-      
-      {store.currentProperty && (
-        <SectionCard>
-          <div className="bg-green-900/20 border border-green-800 rounded p-3 text-center">
-            <p className="text-green-300 font-bold">Current Property</p>
-            <p className="text-white">{properties.find(p => p.id === store.currentProperty)?.name}</p>
-          </div>
-        </SectionCard>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {properties.map(prop => {
           const canBuy = store.cash >= prop.price && store.level >= prop.levelReq;
           const owned = store.currentProperty === prop.id;
           return (
             <div key={prop.id} className={`bg-gray-800 rounded-lg p-4 border ${owned ? 'border-green-700' : canBuy ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start flex-wrap gap-2">
                 <div>
-                  <p className="font-bold text-white">{prop.name} {owned && <span className="text-green-400 text-xs">(Owned)</span>}</p>
+                  <h4 className="font-bold text-white">{prop.name} {owned && <span className="text-green-400 text-xs">(Owned)</span>}</h4>
                   <p className="text-xs text-gray-400">Max Happy: {prop.maxHappy} • Upkeep: ${prop.upkeep}/day • Lvl {prop.levelReq}+</p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {prop.benefits.map(b => (
@@ -1760,7 +1379,6 @@ function PropertiesPage() {
   );
 }
 
-// ============ FACTION PAGE ============
 function FactionPage() {
   const store = useGameStore();
   const ext = useExtendedStore();
@@ -1825,27 +1443,6 @@ function FactionPage() {
                 </div>
               </SectionCard>
 
-              {/* Territory */}
-              <SectionCard title="🗺️ Territory">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {territories.map(terr => {
-                    const controlled = ext.factionTerritories.find(t => t.territoryId === terr.id)?.controlled;
-                    return (
-                      <div key={terr.id} className={`rounded p-2 text-xs border ${controlled ? 'bg-green-900/30 border-green-800' : 'bg-gray-700 border-gray-600'}`}>
-                        <p className="font-bold text-white">{terr.name}</p>
-                        <p className="text-gray-400">{terr.size} blocks • Racket: {terr.racket}</p>
-                        {controlled ? (
-                          <span className="text-green-400 text-[10px]">✓ Controlled</span>
-                        ) : (
-                          <button onClick={() => ext.claimTerritory(terr.id)} className="mt-1 px-2 py-0.5 bg-red-700 hover:bg-red-600 text-white rounded text-[10px]">Attack</button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </SectionCard>
-
-              {/* Chain */}
               <SectionCard title="⛓️ Chain">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-amber-400">{ext.chainCount}</p>
@@ -1876,14 +1473,6 @@ function FactionPage() {
                     Declare Raid
                   </button>
                 </div>
-                <div className="bg-gray-700 rounded p-3">
-                  <p className="text-sm font-bold text-white">💣 Dirty Bomb</p>
-                  <p className="text-xs text-gray-400">Devastating weapon. Reduces enemy respect, causes radiation.</p>
-                  <button onClick={() => ext.useDirtyBomb()} disabled={store.cash < 100000}
-                    className="mt-2 px-3 py-1 bg-red-800 hover:bg-red-700 disabled:bg-gray-600 text-white rounded text-xs">
-                    Deploy ($100,000)
-                  </button>
-                </div>
               </div>
             </SectionCard>
           )}
@@ -1895,10 +1484,6 @@ function FactionPage() {
                   <p className="text-xs text-amber-400 font-bold">Leader</p>
                   <p className="text-xs text-gray-300">Welcome to the faction! Stay active and participate in OCs and wars.</p>
                 </div>
-                <div className="bg-gray-700 rounded p-3">
-                  <p className="text-xs text-blue-400 font-bold">War Coordinator</p>
-                  <p className="text-xs text-gray-300">Next territory war starts in 2 hours. Be ready!</p>
-                </div>
               </div>
             </SectionCard>
           )}
@@ -1908,12 +1493,10 @@ function FactionPage() {
   );
 }
 
-// ============ MESSAGES PAGE ============
 function MessagesPage() {
   const [messages] = useState([
     { id: 1, from: 'System', subject: 'Welcome to Torn City!', body: 'Welcome! Start by training at the gym and committing small crimes.', time: 'Just now', read: false },
     { id: 2, from: 'Bank', subject: 'Bank Account Opened', body: 'Your bank account has been opened. Deposit cash to earn interest.', time: '1m ago', read: false },
-    { id: 3, from: 'Faction', subject: 'Faction Invitation', body: 'You have been invited to join a faction. Visit the Faction page to accept.', time: '5m ago', read: true },
   ]);
   const [selectedMsg, setSelectedMsg] = useState<number | null>(null);
 
@@ -1950,21 +1533,19 @@ function MessagesPage() {
   );
 }
 
-// ============ PROFILE PAGE ============
 function ProfilePage() {
   const store = useGameStore();
-  const ext = useExtendedStore();
-  const [tab, setTab] = useState<'overview' | 'stats' | 'merits' | 'awards' | 'combat_log'>('overview');
+  const [tab, setTab] = useState<'overview' | 'stats' | 'merits'>('overview');
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">👤 Profile</h2>
 
       <div className="flex flex-wrap gap-2">
-        {(['overview', 'stats', 'merits', 'awards', 'combat_log'] as const).map(t => (
+        {(['overview', 'stats', 'merits'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-3 py-1.5 rounded text-xs font-medium capitalize ${tab === t ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>
-            {t === 'combat_log' ? 'Combat Log' : t}
+            {t}
           </button>
         ))}
       </div>
@@ -1979,35 +1560,6 @@ function ProfilePage() {
                 <p className="text-amber-400 text-sm">Level {store.level} • {store.rank}</p>
                 <p className="text-xs text-gray-400">Age: {store.age} days</p>
               </div>
-            </div>
-          </SectionCard>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-xs">
-            <div className="bg-gray-800 rounded p-2 border border-gray-700">
-              <p className="text-green-400 font-bold">${store.cash.toLocaleString()}</p>
-              <p className="text-gray-500">Cash</p>
-            </div>
-            <div className="bg-gray-800 rounded p-2 border border-gray-700">
-              <p className="text-blue-400 font-bold">${store.bank.toLocaleString()}</p>
-              <p className="text-gray-500">Bank</p>
-            </div>
-            <div className="bg-gray-800 rounded p-2 border border-gray-700">
-              <p className="text-purple-400 font-bold">{store.points}</p>
-              <p className="text-gray-500">Points</p>
-            </div>
-            <div className="bg-gray-800 rounded p-2 border border-gray-700">
-              <p className="text-amber-400 font-bold">{store.factionName || 'None'}</p>
-              <p className="text-gray-500">Faction</p>
-            </div>
-          </div>
-
-          <SectionCard title="Equipment">
-            <div className="space-y-1 text-sm">
-              <StatusRow label="Weapon" value={items.find(i => i.id === store.equippedWeapon)?.name || 'Fists'} />
-              <StatusRow label="Armor" value={store.equippedArmor ? items.find(i => i.id === store.equippedArmor)?.name || 'None' : 'None'} />
-              <StatusRow label="Property" value={store.currentProperty ? properties.find(p => p.id === store.currentProperty)?.name || 'None' : 'None'} />
-              <StatusRow label="Job" value={store.currentJob ? jobs.find(j => j.id === store.currentJob)?.name || 'None' : 'Unemployed'} />
-              <StatusRow label="Married" value={ext.marriedTo || 'No'} />
             </div>
           </SectionCard>
 
@@ -2028,29 +1580,6 @@ function ProfilePage() {
               <StatBar label="Defense" value={store.defense} color="bg-green-500" />
               <StatBar label="Dexterity" value={store.dexterity} color="bg-yellow-500" />
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-700 text-sm">
-              <span className="text-gray-400">Total Battle Power: </span>
-              <span className="text-amber-400 font-bold">{(store.strength + store.speed + store.defense + store.dexterity).toLocaleString()}</span>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="💼 Working Stats">
-            <div className="space-y-2">
-              <StatBar label="Manual Labor" value={store.manualLabor} color="bg-orange-500" />
-              <StatBar label="Intelligence" value={store.intelligence} color="bg-cyan-500" />
-              <StatBar label="Endurance" value={store.endurance} color="bg-emerald-500" />
-            </div>
-          </SectionCard>
-
-          <SectionCard title="📊 History">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <StatusRow label="Total Attacks" value={store.totalAttacks.toString()} />
-              <StatusRow label="Total Crimes" value={store.totalCrimes.toString()} />
-              <StatusRow label="Mugs" value={store.totalMugs.toString()} />
-              <StatusRow label="Hospitalized" value={store.totalHospitalized.toString()} />
-              <StatusRow label="Total XP" value={store.totalXpGained.toString()} />
-              <StatusRow label="Total Earned" value={`$${store.totalCashEarned.toLocaleString()}`} />
-            </div>
           </SectionCard>
         </div>
       )}
@@ -2063,17 +1592,12 @@ function ProfilePage() {
               <p className="text-2xl font-bold text-amber-400">{store.meritPoints}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
+              {([
                 { id: 'strength', name: 'Strength', desc: '+5 STR', icon: '💪' },
                 { id: 'defense', name: 'Defense', desc: '+5 DEF', icon: '🛡️' },
                 { id: 'speed', name: 'Speed', desc: '+5 SPD', icon: '⚡' },
                 { id: 'dexterity', name: 'Dexterity', desc: '+5 DEX', icon: '🎯' },
-                { id: 'life', name: 'Life', desc: '+20 HP', icon: '❤️' },
-                { id: 'energy', name: 'Energy', desc: '+5 EN', icon: '🔋' },
-                { id: 'nerve', name: 'Nerve', desc: '+5 NV', icon: '🧠' },
-                { id: 'happy', name: 'Happy', desc: '+10 HP', icon: '😊' },
-                { id: 'crime', name: 'Crime', desc: '+1 Skill', icon: '🔫' },
-              ].map(m => (
+              ]).map(m => (
                 <div key={m.id} className="bg-gray-700 rounded p-2 flex justify-between items-center">
                   <div>
                     <p className="text-xs font-bold text-white">{m.icon} {m.name}</p>
@@ -2086,51 +1610,6 @@ function ProfilePage() {
             </div>
           </SectionCard>
         </div>
-      )}
-
-      {tab === 'awards' && (
-        <SectionCard title="🏆 Awards">
-          <div className="space-y-2">
-            {awards.map(award => {
-              const earned = ext.awards.includes(award.id);
-              return (
-                <div key={award.id} className={`rounded p-2 border flex justify-between items-center ${earned ? 'bg-amber-900/20 border-amber-800' : 'bg-gray-700 border-gray-600'}`}>
-                  <div>
-                    <p className="text-xs font-bold text-white">{award.icon} {award.name}</p>
-                    <p className="text-[10px] text-gray-400">{award.description}</p>
-                  </div>
-                  {earned ? <span className="text-amber-400 text-xs">✓</span> : <span className="text-gray-500 text-[10px]">Locked</span>}
-                </div>
-              );
-            })}
-          </div>
-        </SectionCard>
-      )}
-
-      {tab === 'combat_log' && (
-        <SectionCard title="📜 Combat & Crime Log">
-          <div className="space-y-1 max-h-96 overflow-y-auto">
-            {store.combatLogs.map(log => (
-              <div key={log.id} className={`p-2 rounded text-xs ${log.result === 'win' ? 'bg-green-900/20' : 'bg-red-900/20'}`}>
-                <span className={log.result === 'win' ? 'text-green-400' : 'text-red-400'}>
-                  {log.result === 'win' ? '✅' : '❌'} {log.type} vs {log.target}
-                </span>
-                <span className="text-gray-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-              </div>
-            ))}
-            {store.crimeLogs.map(log => (
-              <div key={log.id} className={`p-2 rounded text-xs ${log.success ? 'bg-green-900/20' : 'bg-red-900/20'}`}>
-                <span className={log.success ? 'text-green-400' : 'text-red-400'}>
-                  {log.success ? '✅' : '❌'} {log.crimeName} {log.success && `+$${log.reward}`}
-                </span>
-                <span className="text-gray-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-              </div>
-            ))}
-            {store.combatLogs.length === 0 && store.crimeLogs.length === 0 && (
-              <p className="text-gray-500 text-center py-4">No combat or crime history yet.</p>
-            )}
-          </div>
-        </SectionCard>
       )}
     </div>
   );

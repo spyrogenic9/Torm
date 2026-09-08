@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useGameStore } from './store';
 import { organizedCrimes, territories, cars, raceTracks, huntAnimals, awards, companies, collections } from './data2';
 
 export interface FactionTerritory {
@@ -9,7 +10,7 @@ export interface FactionTerritory {
   racketLevel: number;
 }
 
-interface ExtendedGameState {
+export interface ExtendedGameState {
   // Faction Warfare
   factionTerritories: FactionTerritory[];
   chainCount: number;
@@ -148,48 +149,39 @@ export const useExtendedStore = create<ExtendedGameState>()(
           updates.marriageDays = state.marriageDays + 1;
         }
 
-        // Company profit
-        if (state.companyOwned) {
-          updates.companyProfit = state.companyProfit + state.companyStars * 100;
-        }
-
-        // Loan interest
-        if (state.loanAmount > 0) {
-          updates.loanAmount = Math.floor(state.loanAmount * 1.002);
-        }
-
-        // Check for new awards
-        const newAwards = [...state.awards];
-        // Award checks would go here based on game state
-
         set(updates);
       },
 
       startOC: (ocId) => {
         const state = get();
+        const gameState = useGameStore.getState();
         const oc = organizedCrimes.find(o => o.id === ocId);
-        if (!oc) return;
-        // Simplified: instant success with rewards
-        const reward = Math.floor(Math.random() * (oc.maxReward - oc.minReward) + oc.minReward);
-        // In real game, this would require faction members and planning
-        set({
-          factionTerritories: state.factionTerritories.map(t => ({
-            ...t,
-            respect: t.respect + (oc.respect || 5)
-          }))
-        });
+        if (!oc || !gameState.factionName) return;
+        if (gameState.nerve < oc.nerveCost) return;
+
+        const success = Math.random() > 0.3;
+        if (success) {
+          const reward = Math.floor(Math.random() * (oc.maxReward - oc.minReward) + oc.minReward);
+          useGameStore.setState({
+            nerve: gameState.nerve - oc.nerveCost,
+            cash: gameState.cash + reward,
+            factionRespect: gameState.factionRespect + oc.respect,
+            totalCashEarned: gameState.totalCashEarned + reward,
+          });
+        } else {
+          useGameStore.setState({
+            nerve: gameState.nerve - oc.nerveCost,
+          });
+        }
       },
 
       claimTerritory: (territoryId) => {
         const state = get();
         const existing = state.factionTerritories.find(t => t.territoryId === territoryId);
-        if (existing) {
-          set({
-            factionTerritories: state.factionTerritories.map(t =>
-              t.territoryId === territoryId ? { ...t, controlled: true } : t
-            )
-          });
-        } else {
+        if (existing) return;
+
+        const success = Math.random() > 0.4;
+        if (success) {
           set({
             factionTerritories: [...state.factionTerritories, {
               territoryId,
@@ -205,7 +197,7 @@ export const useExtendedStore = create<ExtendedGameState>()(
         const state = get();
         set({
           chainCount: state.chainCount + 1,
-          chainTimer: 15 // 5 minute timer in ticks
+          chainTimer: 15
         });
       },
 
@@ -229,10 +221,12 @@ export const useExtendedStore = create<ExtendedGameState>()(
 
       buyCar: (carId) => {
         const state = get();
+        const gameState = useGameStore.getState();
         const car = cars.find(c => c.id === carId);
-        if (!car) return;
-        // Need to import useGameStore for cash check - simplified
+        if (!car || gameState.cash < car.price) return;
+        
         if (!state.ownedCars.includes(carId)) {
+          useGameStore.setState({ cash: gameState.cash - car.price });
           set({
             ownedCars: [...state.ownedCars, carId],
             racingCar: carId
@@ -244,13 +238,28 @@ export const useExtendedStore = create<ExtendedGameState>()(
         const state = get();
         if (!state.racingCar) return;
         set({ racingActive: true });
-        // Race resolves in next tick
       },
 
       hunt: (animalId) => {
         const state = get();
+        const gameState = useGameStore.getState();
         const animal = huntAnimals.find(a => a.id === animalId);
-        if (!animal) return;
+        if (!animal || gameState.energy < animal.energyCost) return;
+
+        const success = Math.random() * 100 < (80 - animal.difficulty * 0.5);
+        if (success) {
+          const reward = Math.floor(Math.random() * (animal.maxReward - animal.minReward) + animal.minReward);
+          useGameStore.setState({
+            energy: gameState.energy - animal.energyCost,
+            cash: gameState.cash + reward,
+            totalCashEarned: gameState.totalCashEarned + reward,
+          });
+        } else {
+          useGameStore.setState({
+            energy: gameState.energy - animal.energyCost,
+          });
+        }
+
         set({
           huntingSkill: state.huntingSkill + 1,
           totalHunts: state.totalHunts + 1
@@ -258,6 +267,10 @@ export const useExtendedStore = create<ExtendedGameState>()(
       },
 
       startCompany: (name, type) => {
+        const gameState = useGameStore.getState();
+        if (gameState.cash < 500000) return;
+        
+        useGameStore.setState({ cash: gameState.cash - 500000 });
         set({
           companyOwned: true,
           companyName: name,
@@ -270,13 +283,19 @@ export const useExtendedStore = create<ExtendedGameState>()(
 
       takeLoan: (amount, max) => {
         const state = get();
+        const gameState = useGameStore.getState();
         if (amount > max || amount <= 0) return;
+        
+        useGameStore.setState({ cash: gameState.cash + amount });
         set({ loanAmount: state.loanAmount + amount });
       },
 
       repayLoan: (amount) => {
         const state = get();
-        if (amount > state.loanAmount || amount <= 0) return;
+        const gameState = useGameStore.getState();
+        if (amount > state.loanAmount || amount > gameState.cash || amount <= 0) return;
+        
+        useGameStore.setState({ cash: gameState.cash - amount });
         set({ loanAmount: state.loanAmount - amount });
       },
 
@@ -303,9 +322,13 @@ export const useExtendedStore = create<ExtendedGameState>()(
       },
 
       startMission: (missionId) => {
-        set({ activeMission: missionId });
+        set({
+          activeMission: missionId
+        });
       },
     }),
-    { name: 'torn-extended-save' }
+    {
+      name: 'torn-city-extended-save',
+    }
   )
 );
