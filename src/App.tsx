@@ -668,16 +668,119 @@ function EquipmentTab() {
 
 function BazaarTab() {
   const store = useGameStore();
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [price, setPrice] = useState('');
+  const [bazaarListings, setBazaarListings] = useState<Array<{itemId: string, quantity: number, price: number}>>([]);
+
+  const handleListItem = (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    const inventoryItem = store.inventory.find(i => i.itemId === itemId);
+    if (!item || !inventoryItem) return;
+    
+    const sellPrice = Number(price);
+    if (sellPrice <= 0) {
+      addNotification('❌ Please enter a valid price', 'error');
+      return;
+    }
+    
+    setBazaarListings([...bazaarListings, { itemId, quantity: 1, price: sellPrice }]);
+    addNotification(`✅ Listed ${item.name} for $${sellPrice.toLocaleString()}`, 'success');
+    setPrice('');
+    setSelectedItem(null);
+  };
 
   return (
     <SectionCard title="🏬 Your Bazaar">
       <p className="text-sm text-gray-400 mb-3">Set up your personal shop to sell items to other players.</p>
-      {store.points < 1 && (
-        <p className="text-xs text-red-400 mb-2">Requires 1 Point to open a Bazaar. Current: {store.points}</p>
+      
+      {store.points < 1 ? (
+        <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 text-center">
+          <p className="text-red-300 text-sm font-bold mb-2">Bazaar Locked</p>
+          <p className="text-xs text-gray-400">Requires 1 Point to open a Bazaar</p>
+          <p className="text-xs text-gray-400 mt-1">Current Points: <span className="text-purple-400 font-bold">{store.points}</span></p>
+          <p className="text-[10px] text-gray-500 mt-2">Visit Points Market to buy points</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* Current Listings */}
+          {bazaarListings.length > 0 && (
+            <div className="bg-gray-700 rounded-lg p-3">
+              <p className="text-xs font-bold text-white mb-2">Your Listings ({bazaarListings.length})</p>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {bazaarListings.map((listing, idx) => {
+                  const item = items.find(i => i.id === listing.itemId);
+                  return (
+                    <div key={idx} className="flex justify-between items-center bg-gray-600 rounded p-2 text-xs">
+                      <span className="text-gray-300">{item?.name} x{listing.quantity}</span>
+                      <span className="text-green-400 font-bold">${listing.price.toLocaleString()}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* List Items from Inventory */}
+          <div>
+            <p className="text-xs font-bold text-white mb-2">List Items for Sale</p>
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {store.inventory.map(inv => {
+                const item = items.find(i => i.id === inv.itemId);
+                if (!item) return null;
+                
+                return (
+                  <div key={inv.itemId} className={`bg-gray-700 rounded p-2 ${selectedItem === inv.itemId ? 'border-2 border-amber-600' : ''}`}>
+                    {selectedItem === inv.itemId ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-xs font-bold text-white">{item.name}</p>
+                            <p className="text-[10px] text-gray-400">Qty: {inv.quantity} • Base: ${item.price.toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <input 
+                          type="number" 
+                          value={price} 
+                          onChange={e => setPrice(e.target.value)} 
+                          placeholder="Sell price"
+                          className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-xs text-white"
+                        />
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleListItem(inv.itemId)}
+                            className="flex-1 px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs"
+                          >
+                            List for Sale
+                          </button>
+                          <button 
+                            onClick={() => { setSelectedItem(null); setPrice(''); }}
+                            className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-xs font-bold text-white">{item.name}</p>
+                          <p className="text-[10px] text-gray-400">Qty: {inv.quantity} • Base: ${item.price.toLocaleString()}</p>
+                        </div>
+                        <button 
+                          onClick={() => setSelectedItem(inv.itemId)}
+                          className="px-2 py-1 bg-amber-700 hover:bg-amber-600 text-white rounded text-xs"
+                        >
+                          List
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
-      <div className="bg-gray-700 rounded p-3 text-center">
-        <p className="text-gray-400 text-sm">Your bazaar is {store.points >= 1 ? 'active' : 'locked'}</p>
-      </div>
     </SectionCard>
   );
 }
@@ -918,11 +1021,108 @@ function ItemMarketLocation() {
 }
 
 function AuctionLocation() {
+  const store = useGameStore();
+  const [selectedAuction, setSelectedAuction] = useState<string | null>(null);
+  const [bidAmount, setBidAmount] = useState('');
+  
+  // Simulated auction items
+  const auctionItems = [
+    { id: 'auction_1', name: 'Rare Diamond', currentBid: 50000, minBid: 55000, timeLeft: 3600, bidder: 'DiamondKing', category: 'Collectible' },
+    { id: 'auction_2', name: 'Vintage Pistol', currentBid: 15000, minBid: 16000, timeLeft: 1800, bidder: 'GunCollector', category: 'Weapon' },
+    { id: 'auction_3', name: 'Gold Watch', currentBid: 30000, minBid: 32000, timeLeft: 7200, bidder: 'LuxuryBuyer', category: 'Collectible' },
+    { id: 'auction_4', name: 'Kevlar Vest', currentBid: 8000, minBid: 9000, timeLeft: 900, bidder: 'ArmorFan', category: 'Armor' },
+    { id: 'auction_5', name: 'Medical Kit', currentBid: 2000, minBid: 2500, timeLeft: 600, bidder: 'Medic', category: 'Medical' },
+  ];
+
+  const handleBid = (auctionId: string) => {
+    const auction = auctionItems.find(a => a.id === auctionId);
+    if (!auction) return;
+    
+    const bid = Number(bidAmount);
+    if (bid < auction.minBid) {
+      addNotification(`❌ Minimum bid is $${auction.minBid.toLocaleString()}`, 'error');
+      return;
+    }
+    if (bid > store.cash) {
+      addNotification('❌ Not enough cash!', 'error');
+      return;
+    }
+    
+    addNotification(`✅ Bid placed: $${bid.toLocaleString()} on ${auction.name}`, 'success');
+    setBidAmount('');
+    setSelectedAuction(null);
+  };
+
   return (
     <SectionCard title="🔨 Auction House">
-      <p className="text-sm text-gray-400 mb-3">Bid on rare items from other players.</p>
-      <div className="bg-gray-700 rounded p-4 text-center">
-        <p className="text-gray-500 text-sm">Auction feature coming soon</p>
+      <p className="text-sm text-gray-400 mb-3">Bid on rare items from other players. Cash: <span className="text-green-400">${store.cash.toLocaleString()}</span></p>
+      
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {auctionItems.map(auction => {
+          const hours = Math.floor(auction.timeLeft / 3600);
+          const minutes = Math.floor((auction.timeLeft % 3600) / 60);
+          
+          return (
+            <div key={auction.id} className={`bg-gray-700 rounded-lg p-3 ${selectedAuction === auction.id ? 'border-2 border-amber-600' : ''}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="text-sm font-bold text-white">{auction.name}</p>
+                  <p className="text-[10px] text-gray-400">{auction.category}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">Time Left</p>
+                  <p className="text-xs text-amber-400 font-bold">{hours}h {minutes}m</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div>
+                  <p className="text-gray-400">Current Bid</p>
+                  <p className="text-green-400 font-bold">${auction.currentBid.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Min Next Bid</p>
+                  <p className="text-amber-400 font-bold">${auction.minBid.toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <p className="text-[10px] text-gray-500 mb-2">Current bidder: {auction.bidder}</p>
+              
+              {selectedAuction === auction.id ? (
+                <div className="space-y-2">
+                  <input 
+                    type="number" 
+                    value={bidAmount} 
+                    onChange={e => setBidAmount(e.target.value)} 
+                    placeholder={`Min: $${auction.minBid.toLocaleString()}`}
+                    className="w-full px-2 py-1.5 bg-gray-600 border border-gray-500 rounded text-xs text-white"
+                  />
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleBid(auction.id)}
+                      className="flex-1 px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded text-xs"
+                    >
+                      Place Bid
+                    </button>
+                    <button 
+                      onClick={() => { setSelectedAuction(null); setBidAmount(''); }}
+                      className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 text-white rounded text-xs"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setSelectedAuction(auction.id)}
+                  className="w-full px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded text-xs"
+                >
+                  Place Bid
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </SectionCard>
   );
@@ -1270,6 +1470,8 @@ function CommunityLocation() {
 // Continue with other pages...
 function JobsPage() {
   const store = useGameStore();
+  const ext = useExtendedStore();
+  const [tab, setTab] = useState<'jobs' | 'company'>('jobs');
   const currentJob = jobs.find(j => j.id === store.currentJob);
 
   const handleApply = (jobId: string) => {
@@ -1315,8 +1517,19 @@ function JobsPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-amber-400">💼 Jobs</h2>
+      <h2 className="text-xl font-bold text-amber-400">💼 Jobs & Company</h2>
       
+      <div className="flex gap-2 bg-gray-800 p-2 rounded-lg border border-gray-700">
+        <button onClick={() => setTab('jobs')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'jobs' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+          💼 Jobs
+        </button>
+        <button onClick={() => setTab('company')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'company' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+          🏢 Company
+        </button>
+      </div>
+
+      {tab === 'jobs' && (
+        <>
       {currentJob && (
         <SectionCard title={`Current Job: ${currentJob.name}`}>
           <div className="space-y-3">
@@ -1370,6 +1583,117 @@ function JobsPage() {
           })}
         </div>
       </SectionCard>
+        </>
+      )}
+
+      {tab === 'company' && (
+        <div className="space-y-3">
+          {!ext.companyOwned ? (
+            <SectionCard title="🏢 Start Your Own Company">
+              <p className="text-sm text-gray-400 mb-3">Own a business and earn passive income.</p>
+              <div className="bg-gray-700 rounded-lg p-4">
+                <p className="text-xs text-gray-300 mb-2">Requirements:</p>
+                <ul className="text-xs text-gray-400 space-y-1 mb-3">
+                  <li>• $500,000 startup cost</li>
+                  <li>• Level 10+</li>
+                  <li>• Intelligence 20+</li>
+                </ul>
+                <button 
+                  onClick={() => {
+                    if (store.cash < 500000) {
+                      addNotification('❌ Not enough cash! Need $500,000', 'error');
+                      return;
+                    }
+                    if (store.level < 10) {
+                      addNotification('❌ Need Level 10+', 'error');
+                      return;
+                    }
+                    if (store.intelligence < 20) {
+                      addNotification('❌ Need 20+ Intelligence', 'error');
+                      return;
+                    }
+                    ext.startCompany('My Company', 'General');
+                    addNotification('✅ Company founded!', 'success');
+                  }}
+                  disabled={store.cash < 500000 || store.level < 10 || store.intelligence < 20}
+                  className="w-full py-2 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm font-bold"
+                >
+                  Found Company ($500,000)
+                </button>
+              </div>
+            </SectionCard>
+          ) : (
+            <>
+              <SectionCard title={`🏢 ${ext.companyName}`}>
+                <div className="grid grid-cols-2 gap-3 text-center text-xs mb-3">
+                  <div className="bg-gray-700 rounded p-2">
+                    <p className="text-gray-400">Type</p>
+                    <p className="text-white font-bold">{ext.companyType}</p>
+                  </div>
+                  <div className="bg-gray-700 rounded p-2">
+                    <p className="text-gray-400">Stars</p>
+                    <p className="text-amber-400 font-bold">{'⭐'.repeat(ext.companyStars)}</p>
+                  </div>
+                  <div className="bg-gray-700 rounded p-2">
+                    <p className="text-gray-400">Employees</p>
+                    <p className="text-white font-bold">{ext.companyEmployees}</p>
+                  </div>
+                  <div className="bg-gray-700 rounded p-2">
+                    <p className="text-gray-400">Daily Profit</p>
+                    <p className="text-green-400 font-bold">${ext.companyProfit.toLocaleString()}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    const profit = Math.floor(Math.random() * 5000 + 1000) * ext.companyStars;
+                    useExtendedStore.setState({ companyProfit: ext.companyProfit + profit });
+                    useGameStore.setState({ cash: store.cash + profit });
+                    addNotification(`✅ Collected $${profit.toLocaleString()} profit!`, 'success');
+                  }}
+                  className="w-full py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm font-bold"
+                >
+                  Collect Profit
+                </button>
+              </SectionCard>
+
+              <SectionCard title="📊 Company Actions">
+                <div className="space-y-2">
+                  <button 
+                    onClick={() => {
+                      if (store.cash < 50000) {
+                        addNotification('❌ Need $50,000 to hire', 'error');
+                        return;
+                      }
+                      useGameStore.setState({ cash: store.cash - 50000 });
+                      useExtendedStore.setState({ companyEmployees: ext.companyEmployees + 1 });
+                      addNotification('✅ Hired new employee!', 'success');
+                    }}
+                    disabled={store.cash < 50000}
+                    className="w-full py-2 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm"
+                  >
+                    Hire Employee ($50,000)
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (store.cash < 100000) {
+                        addNotification('❌ Need $100,000 to upgrade', 'error');
+                        return;
+                      }
+                      useGameStore.setState({ cash: store.cash - 100000 });
+                      useExtendedStore.setState({ companyStars: ext.companyStars + 1 });
+                      addNotification(`✅ Upgraded to ${ext.companyStars + 1} stars!`, 'success');
+                    }}
+                    disabled={store.cash < 100000}
+                    className="w-full py-2 bg-amber-700 hover:bg-amber-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm"
+                  >
+                    Upgrade Company ($100,000)
+                  </button>
+                </div>
+              </SectionCard>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1460,7 +1784,6 @@ function CrimesPage() {
   const store = useGameStore();
   const ext = useExtendedStore();
   const [tab, setTab] = useState<'crimes' | 'combat' | 'organized'>('crimes');
-  const [lastCrimeResult, setLastCrimeResult] = useState<{success: boolean; reward?: number; jailed?: boolean} | null>(null);
 
   return (
     <div className="space-y-5">
@@ -1488,17 +1811,6 @@ function CrimesPage() {
             <span className="text-gray-400">Nerve: <span className="text-orange-400 font-bold">{store.nerve}/{store.maxNerve}</span></span>
           </div>
 
-          {/* Last Crime Result */}
-          {lastCrimeResult && (
-            <div className={`rounded-lg p-3 border ${lastCrimeResult.success ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700'}`}>
-              {lastCrimeResult.success ? (
-                <p className="text-green-300 text-sm font-bold">✅ Success! Earned ${lastCrimeResult.reward?.toLocaleString()}</p>
-              ) : (
-                <p className="text-red-300 text-sm font-bold">❌ Failed! {lastCrimeResult.jailed ? 'You were sent to jail!' : 'Better luck next time.'}</p>
-              )}
-            </div>
-          )}
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {crimes.map(crime => {
               const canDo = store.nerve >= crime.nerveCost && store.level >= crime.levelReq && !store.inHospital && !store.inJail;
@@ -1524,9 +1836,6 @@ function CrimesPage() {
                   } else {
                     addNotification(`❌ ${crime.name} failed!`, 'error');
                   }
-                  
-                  setLastCrimeResult({ success, reward, jailed });
-                  setTimeout(() => setLastCrimeResult(null), 3000);
                 }, 100);
               };
               
