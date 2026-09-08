@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from './store';
+import { useExtendedStore } from './store2';
 import { crimes, gyms, courses, jobs, items, npcEnemies, stocks, properties, cityAreas, destinations, casinoGames } from './data';
+import {
+  FactionWarfarePage, OrganizedCrimePage, RacingPage, HuntingPage,
+  MissionsPage, AwardsPage, CompanyPage, BountyPage, CollectionsPage,
+  MarriagePage, HackingPage, BazaarPage, LoanSharkPage, NewspaperPage
+} from './pages';
 
-type Page = 'overview' | 'city' | 'gym' | 'combat' | 'crime' | 'inventory' | 'market' | 'education' | 'job' | 'faction' | 'travel' | 'casino' | 'bank' | 'stocks' | 'property' | 'merits' | 'hospital' | 'profile';
+type Page = 'overview' | 'city' | 'gym' | 'combat' | 'crime' | 'inventory' | 'market' | 'education' | 'job' | 'faction' | 'faction_war' | 'oc' | 'travel' | 'racing' | 'hunting' | 'missions' | 'bounty' | 'casino' | 'bank' | 'stocks' | 'property' | 'company' | 'bazaar' | 'merits' | 'awards' | 'collections' | 'marriage' | 'hacking' | 'loan' | 'newspaper' | 'hospital' | 'profile';
 
 function App() {
   const [page, setPage] = useState<Page>('overview');
   const [showNameModal, setShowNameModal] = useState(false);
   const store = useGameStore();
 
+  const ext = useExtendedStore();
+
   // Game tick every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       store.tick();
+      ext.tickExtended();
     }, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -27,17 +36,31 @@ function App() {
     { id: 'gym', label: 'Gym', icon: '💪' },
     { id: 'combat', label: 'Combat', icon: '⚔️' },
     { id: 'crime', label: 'Crime', icon: '🔫' },
+    { id: 'oc', label: 'Org. Crime', icon: '🕵️' },
     { id: 'inventory', label: 'Inventory', icon: '🎒' },
     { id: 'market', label: 'Market', icon: '🏪' },
+    { id: 'bazaar', label: 'Bazaar', icon: '🏬' },
     { id: 'education', label: 'Education', icon: '📚' },
     { id: 'job', label: 'Jobs', icon: '💼' },
+    { id: 'company', label: 'Company', icon: '🏢' },
     { id: 'faction', label: 'Faction', icon: '🏴' },
+    { id: 'faction_war', label: 'Warfare', icon: '💥' },
     { id: 'travel', label: 'Travel', icon: '✈️' },
+    { id: 'racing', label: 'Racing', icon: '🏎️' },
+    { id: 'hunting', label: 'Hunting', icon: '🦁' },
+    { id: 'missions', label: 'Missions', icon: '📋' },
+    { id: 'bounty', label: 'Bounty', icon: '🎯' },
     { id: 'casino', label: 'Casino', icon: '🎰' },
     { id: 'bank', label: 'Bank', icon: '🏦' },
+    { id: 'loan', label: 'Loan', icon: '🦈' },
     { id: 'stocks', label: 'Stocks', icon: '📈' },
     { id: 'property', label: 'Property', icon: '🏠' },
     { id: 'merits', label: 'Merits', icon: '⭐' },
+    { id: 'awards', label: 'Awards', icon: '🏆' },
+    { id: 'collections', label: 'Museum', icon: '🏛️' },
+    { id: 'marriage', label: 'Marriage', icon: '💍' },
+    { id: 'hacking', label: 'Hacking', icon: '💻' },
+    { id: 'newspaper', label: 'News', icon: '📰' },
     { id: 'hospital', label: 'Hospital', icon: '🏥' },
     { id: 'profile', label: 'Profile', icon: '👤' },
   ];
@@ -96,9 +119,9 @@ function App() {
         </nav>
 
         {/* Mobile Nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 z-50 overflow-x-auto">
-          <div className="flex p-1 gap-1">
-            {navItems.slice(0, 8).map(item => (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 z-50">
+          <div className="flex overflow-x-auto p-1 gap-1 scrollbar-hide">
+            {navItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setPage(item.id)}
@@ -107,7 +130,7 @@ function App() {
                 }`}
               >
                 <span>{item.icon}</span>
-                <span className="text-[10px]">{item.label}</span>
+                <span className="text-[10px] whitespace-nowrap">{item.label}</span>
               </button>
             ))}
           </div>
@@ -121,17 +144,31 @@ function App() {
             {page === 'gym' && <GymPage />}
             {page === 'combat' && <CombatPage />}
             {page === 'crime' && <CrimePage />}
+            {page === 'oc' && <OrganizedCrimePage />}
             {page === 'inventory' && <InventoryPage />}
             {page === 'market' && <MarketPage />}
+            {page === 'bazaar' && <BazaarPage />}
             {page === 'education' && <EducationPage />}
             {page === 'job' && <JobPage />}
+            {page === 'company' && <CompanyPage />}
             {page === 'faction' && <FactionPage />}
+            {page === 'faction_war' && <FactionWarfarePage />}
             {page === 'travel' && <TravelPage />}
+            {page === 'racing' && <RacingPage />}
+            {page === 'hunting' && <HuntingPage />}
+            {page === 'missions' && <MissionsPage />}
+            {page === 'bounty' && <BountyPage />}
             {page === 'casino' && <CasinoPage />}
             {page === 'bank' && <BankPage />}
+            {page === 'loan' && <LoanSharkPage />}
             {page === 'stocks' && <StocksPage />}
             {page === 'property' && <PropertyPage />}
             {page === 'merits' && <MeritsPage />}
+            {page === 'awards' && <AwardsPage />}
+            {page === 'collections' && <CollectionsPage />}
+            {page === 'marriage' && <MarriagePage />}
+            {page === 'hacking' && <HackingPage />}
+            {page === 'newspaper' && <NewspaperPage />}
             {page === 'hospital' && <HospitalPage />}
             {page === 'profile' && <ProfilePage />}
           </div>
