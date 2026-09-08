@@ -722,17 +722,21 @@ export const useGameStore = create<GameState>()(
         const updates: Partial<GameState> = {};
 
         // Regenerate resources (every tick = 3 seconds)
-        // Energy: +1 per tick (roughly 1 per 3 seconds)
+        // Energy: +1 per tick (roughly 1 per 3 seconds) - Torn style
         if (state.energy < state.maxEnergy) updates.energy = Math.min(state.maxEnergy, state.energy + 1);
         
-        // Nerve: +1 per tick
+        // Nerve: +1 per tick - Torn style
         if (state.nerve < state.maxNerve) updates.nerve = Math.min(state.maxNerve, state.nerve + 1);
         
-        // Happy: -1 per tick (slow decay)
-        if (state.happy > 0) updates.happy = Math.max(0, state.happy - 1);
+        // Happy: -1 per 10 ticks (much slower decay) - Torn style
+        if (state.age % 10 === 0 && state.happy > 0) {
+          updates.happy = Math.max(0, state.happy - 1);
+        }
         
-        // Life: +5 per tick when not in hospital
-        if (!state.inHospital && state.life < state.maxLife) updates.life = Math.min(state.maxLife, state.life + 5);
+        // Life: +10 per tick when not in hospital (fast recovery) - Torn style
+        if (!state.inHospital && state.life < state.maxLife) {
+          updates.life = Math.min(state.maxLife, state.life + 10);
+        }
 
         // Hospital timer
         if (state.inHospital && state.hospitalTimer > 0) {
