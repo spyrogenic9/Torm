@@ -232,12 +232,33 @@ function HomePage() {
   const store = useGameStore();
   const ext = useExtendedStore();
   const xpNeeded = Math.floor(100 * Math.pow(1.5, store.level - 1));
-
+  
+  // Daily news rotation
+  const dailyNews = [
+    '🔥 Faction war heats up in downtown!',
+    '💰 Record-breaking heist reported',
+    '🏋️ New gym opens in West Side',
+    '📈 Stock market shows strong growth',
+    '🚨 Police crack down on organized crime',
+    '🏎️ Racing championship finals tonight',
+    '💎 Rare artifact discovered at museum',
+  ];
+  
   return (
     <div className="space-y-4">
+      {/* Daily News Banner */}
+      <div className="bg-gradient-to-r from-amber-900/50 to-amber-800/50 rounded-lg p-3 border border-amber-700">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">📰</span>
+          <div>
+            <p className="text-xs text-amber-300 font-bold">DAILY NEWS</p>
+            <p className="text-sm text-white">{dailyNews[store.age % dailyNews.length]}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Character Summary */}
-      <SectionCard>
-        <div className="flex items-center gap-4 mb-4">
+      <SectionCard>        <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center text-2xl">👤</div>
           <div>
             <h2 className="text-lg font-bold text-white">{store.name}</h2>
@@ -287,6 +308,17 @@ function HomePage() {
         <QuickAction icon="⚔️" label="Attack" desc="Fight players" color="border-purple-800" />
         <QuickAction icon="💼" label="Work" desc="Do your job" color="border-blue-800" />
       </div>
+
+      {/* Tips & Tutorial */}
+      <SectionCard title="💡 Tips for New Players">
+        <div className="space-y-2 text-sm text-gray-300">
+          <p>• Start with low-level crimes to build nerve and earn cash</p>
+          <p>• Train at the gym to increase your battle stats</p>
+          <p>• Join a faction to access organized crimes and warfare</p>
+          <p>• Invest in the bank for passive income</p>
+          <p>• Travel abroad (level 15+) for unique items and hunting</p>
+        </div>
+      </SectionCard>
 
       {/* Recent Activity */}
       <SectionCard title="📋 Recent Activity">
@@ -1072,23 +1104,91 @@ function ChurchLocation() {
 }
 
 function CommunityLocation() {
+  const store = useGameStore();
+  const [tab, setTab] = useState<'events' | 'leaderboard' | 'forums'>('events');
+  
+  // Simulated leaderboard data
+  const leaderboard = [
+    { rank: 1, name: 'ShadowKing', level: 85, battles: 1247 },
+    { rank: 2, name: 'NightHawk', level: 78, battles: 1089 },
+    { rank: 3, name: 'IronFist', level: 72, battles: 956 },
+    { rank: 4, name: 'GhostRider', level: 68, battles: 834 },
+    { rank: 5, name: 'ThunderBolt', level: 65, battles: 721 },
+  ];
+  
+  // Simulated forum posts
+  const forumPosts = [
+    { title: 'Best gym for beginners?', author: 'Newbie123', replies: 23 },
+    { title: 'Faction recruitment - Dark Shadows', author: 'LeaderX', replies: 15 },
+    { title: 'Stock market tips', author: 'TraderPro', replies: 42 },
+    { title: 'Looking for OC team', author: 'CriminalMind', replies: 8 },
+  ];
+  
   return (
     <SectionCard title="👥 Community Center">
-      <p className="text-sm text-gray-400 mb-3">Community events and announcements.</p>
-      <div className="space-y-2">
-        <div className="bg-gray-700 rounded p-3">
-          <p className="text-xs text-amber-400 font-bold">📢 City Event</p>
-          <p className="text-xs text-gray-300 mt-1">Weekly XSS competition happening now! Top fighters win cash prizes.</p>
-        </div>
-        <div className="bg-gray-700 rounded p-3">
-          <p className="text-xs text-amber-400 font-bold">🎉 Holiday Event</p>
-          <p className="text-xs text-gray-300 mt-1">Special holiday items available in shops. Limited time only!</p>
-        </div>
-        <div className="bg-gray-700 rounded p-3">
-          <p className="text-xs text-amber-400 font-bold">🏆 Hall of Fame</p>
-          <p className="text-xs text-gray-300 mt-1">Check the leaderboards for top players in various categories.</p>
-        </div>
+      <div className="flex gap-2 mb-3">
+        <button onClick={() => setTab('events')} className={`px-3 py-1 rounded text-xs ${tab === 'events' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Events</button>
+        <button onClick={() => setTab('leaderboard')} className={`px-3 py-1 rounded text-xs ${tab === 'leaderboard' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Leaderboard</button>
+        <button onClick={() => setTab('forums')} className={`px-3 py-1 rounded text-xs ${tab === 'forums' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Forums</button>
       </div>
+      
+      {tab === 'events' && (
+        <div className="space-y-2">
+          <div className="bg-gradient-to-r from-amber-900/30 to-amber-800/30 border border-amber-700 rounded p-3">
+            <p className="text-xs text-amber-400 font-bold">📢 City Event - Active Now!</p>
+            <p className="text-xs text-gray-300 mt-1">Weekly XSS competition happening now! Top fighters win cash prizes.</p>
+            <p className="text-[10px] text-gray-500 mt-1">Ends in: 2d 14h 32m</p>
+          </div>
+          <div className="bg-gradient-to-r from-red-900/30 to-red-800/30 border border-red-700 rounded p-3">
+            <p className="text-xs text-red-400 font-bold">🎉 Holiday Event</p>
+            <p className="text-xs text-gray-300 mt-1">Special holiday items available in shops. Limited time only!</p>
+            <p className="text-[10px] text-gray-500 mt-1">Ends in: 5d 8h 15m</p>
+          </div>
+          <div className="bg-gradient-to-r from-purple-900/30 to-purple-800/30 border border-purple-700 rounded p-3">
+            <p className="text-xs text-purple-400 font-bold">🏆 Tournament</p>
+            <p className="text-xs text-gray-300 mt-1">Faction warfare tournament starting soon. Register your faction!</p>
+            <p className="text-[10px] text-gray-500 mt-1">Starts in: 1d 6h 45m</p>
+          </div>
+        </div>
+      )}
+      
+      {tab === 'leaderboard' && (
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400 mb-2">Top Fighters This Week</p>
+          {leaderboard.map(player => (
+            <div key={player.rank} className="flex items-center justify-between bg-gray-700 rounded p-2">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${player.rank === 1 ? 'text-yellow-400' : player.rank === 2 ? 'text-gray-300' : player.rank === 3 ? 'text-amber-600' : 'text-gray-500'}`}>
+                  #{player.rank}
+                </span>
+                <div>
+                  <p className="text-xs text-white font-medium">{player.name}</p>
+                  <p className="text-[10px] text-gray-500">Level {player.level}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-green-400 font-bold">{player.battles}</p>
+                <p className="text-[10px] text-gray-500">battles</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {tab === 'forums' && (
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400 mb-2">Recent Forum Posts</p>
+          {forumPosts.map((post, idx) => (
+            <div key={idx} className="bg-gray-700 rounded p-2">
+              <p className="text-xs text-white font-medium">{post.title}</p>
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-[10px] text-gray-500">by {post.author}</p>
+                <p className="text-[10px] text-gray-500">{post.replies} replies</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </SectionCard>
   );
 }
@@ -1273,18 +1373,19 @@ function GymPage() {
   );
 }
 
-// ============ CRIMES PAGE (Crimes + Organized Crime) ============
+// ============ CRIMES PAGE (Crimes + Combat + Organized Crime) ============
 function CrimesPage() {
   const store = useGameStore();
   const ext = useExtendedStore();
-  const [tab, setTab] = useState<'crimes' | 'organized'>('crimes');
+  const [tab, setTab] = useState<'crimes' | 'combat' | 'organized'>('crimes');
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-amber-400">🔫 Crimes</h2>
+      <h2 className="text-xl font-bold text-amber-400">🔫 Crimes & Combat</h2>
       
       <div className="flex gap-2">
         <button onClick={() => setTab('crimes')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'crimes' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Crimes</button>
+        <button onClick={() => setTab('combat')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'combat' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Combat</button>
         <button onClick={() => setTab('organized')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'organized' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Organized Crime</button>
       </div>
 
@@ -1324,6 +1425,8 @@ function CrimesPage() {
         </div>
       )}
 
+      {tab === 'combat' && <CombatSection />}
+
       {tab === 'organized' && (
         <div className="space-y-3">
           {!store.factionName ? (
@@ -1353,6 +1456,92 @@ function CrimesPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ============ COMBAT PAGE (Added to Crimes section) ============
+function CombatSection() {
+  const store = useGameStore();
+  const [message, setMessage] = useState('');
+  const [combatResult, setCombatResult] = useState<string | null>(null);
+
+  const handleAttack = (enemyId: string, type: 'mug' | 'hospitalize' | 'leave') => {
+    if (store.energy < 5) {
+      setMessage('Not enough energy!');
+      return;
+    }
+    if (store.inHospital || store.inJail) {
+      setMessage('Cannot attack while in hospital or jail!');
+      return;
+    }
+    
+    store.attackPlayer(enemyId, type);
+    const enemy = npcEnemies.find(e => e.id === enemyId);
+    setCombatResult(`Attacked ${enemy?.name} (${type})`);
+    setTimeout(() => setCombatResult(null), 3000);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-gray-800 rounded p-3 border border-gray-700 flex justify-between items-center text-sm">
+        <span className="text-gray-400">Battle Power: <span className="text-amber-400 font-bold">{store.strength + store.speed + store.defense + store.dexterity}</span></span>
+        <span className="text-gray-400">Energy: <span className="text-green-400 font-bold">{store.energy}/{store.maxEnergy}</span></span>
+      </div>
+
+      {combatResult && (
+        <div className="bg-blue-900/30 border border-blue-800 rounded p-2 text-center">
+          <p className="text-blue-300 text-sm">{combatResult}</p>
+        </div>
+      )}
+
+      {message && (
+        <div className="bg-red-900/30 border border-red-800 rounded p-2 text-center">
+          <p className="text-red-300 text-sm">{message}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {npcEnemies.map(enemy => {
+          const canAttack = store.energy >= 5 && !store.inHospital && !store.inJail;
+          const powerDiff = (store.strength + store.speed + store.defense + store.dexterity) - (enemy.strength + enemy.speed + enemy.defense + enemy.dexterity);
+          const difficulty = powerDiff > 100 ? 'Easy' : powerDiff > 0 ? 'Medium' : powerDiff > -100 ? 'Hard' : 'Very Hard';
+          const diffColor = powerDiff > 100 ? 'text-green-400' : powerDiff > 0 ? 'text-yellow-400' : powerDiff > -100 ? 'text-orange-400' : 'text-red-400';
+          
+          return (
+            <div key={enemy.id} className={`bg-gray-800 rounded-lg p-3 border ${canAttack ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="text-sm font-bold text-white">{enemy.name}</p>
+                  <p className="text-[10px] text-gray-400">Level {enemy.level} • {difficulty}</p>
+                </div>
+                <span className={`text-[10px] font-bold ${diffColor}`}>{difficulty}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1 text-[10px] mb-2">
+                <span className="text-red-400">STR: {enemy.strength}</span>
+                <span className="text-blue-400">SPD: {enemy.speed}</span>
+                <span className="text-green-400">DEF: {enemy.defense}</span>
+                <span className="text-yellow-400">DEX: {enemy.dexterity}</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mb-2">Weapon: {enemy.weapon} • HP: {enemy.life}</p>
+              <div className="flex gap-1">
+                <button onClick={() => handleAttack(enemy.id, 'leave')} disabled={!canAttack}
+                  className="flex-1 px-2 py-1 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-[10px]">
+                  Leave
+                </button>
+                <button onClick={() => handleAttack(enemy.id, 'mug')} disabled={!canAttack}
+                  className="flex-1 px-2 py-1 bg-orange-700 hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-[10px]">
+                  Mug
+                </button>
+                <button onClick={() => handleAttack(enemy.id, 'hospitalize')} disabled={!canAttack}
+                  className="flex-1 px-2 py-1 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-[10px]">
+                  Hosp
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
