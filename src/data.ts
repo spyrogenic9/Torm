@@ -239,11 +239,11 @@ export interface Property {
 }
 
 export const properties: Property[] = [
-  { id: 'apartment', name: 'Small Apartment', price: 50000, maxHappy: 100, upkeep: 100, levelReq: 3, benefits: ['Basic shelter'] },
-  { id: 'house', name: 'House', price: 200000, maxHappy: 200, upkeep: 300, levelReq: 8, benefits: ['Extra storage', 'Garden'] },
-  { id: 'villa', name: 'Villa', price: 1000000, maxHappy: 400, upkeep: 800, levelReq: 15, benefits: ['Pool', 'Shooting range', 'Staff'] },
-  { id: 'mansion', name: 'Mansion', price: 5000000, maxHappy: 800, upkeep: 2000, levelReq: 20, benefits: ['Medical facility', 'Airstrip', 'Bunker'] },
-  { id: 'penthouse', name: 'Penthouse', price: 10000000, maxHappy: 1500, upkeep: 5000, levelReq: 25, benefits: ['All amenities', 'Prestige', 'City view'] },
+  { id: 'apartment', name: 'Small Apartment', price: 50000, maxHappy: 200, upkeep: 100, levelReq: 3, benefits: ['Basic shelter', '+50 Happy'] },
+  { id: 'house', name: 'House', price: 200000, maxHappy: 300, upkeep: 300, levelReq: 8, benefits: ['Extra storage', 'Garden', '+150 Happy'] },
+  { id: 'villa', name: 'Villa', price: 1000000, maxHappy: 500, upkeep: 800, levelReq: 15, benefits: ['Pool', 'Shooting range', 'Staff', '+350 Happy'] },
+  { id: 'mansion', name: 'Mansion', price: 5000000, maxHappy: 1000, upkeep: 2000, levelReq: 20, benefits: ['Medical facility', 'Airstrip', 'Bunker', '+850 Happy'] },
+  { id: 'penthouse', name: 'Penthouse', price: 10000000, maxHappy: 2000, upkeep: 5000, levelReq: 25, benefits: ['All amenities', 'Prestige', 'City view', '+1850 Happy'] },
 ];
 
 // ============ NPC ENEMIES ============

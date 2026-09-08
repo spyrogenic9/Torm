@@ -1379,12 +1379,12 @@ function GymPage() {
       return; 
     }
     
-    const prevStat = store[stat];
-    store.trainStat(stat, selectedGym);
-    const gain = store[stat] - prevStat;
-    setLastGain({ stat, gain });
-    addNotification(`✅ Trained ${stat}! +${gain}`, 'success');
-    setTimeout(() => setLastGain(null), 2000);
+    const gain = store.trainStat(stat, selectedGym);
+    if (gain && gain > 0) {
+      setLastGain({ stat, gain });
+      addNotification(`✅ Trained ${stat}! +${gain}`, 'success');
+      setTimeout(() => setLastGain(null), 2000);
+    }
   };
 
   return (

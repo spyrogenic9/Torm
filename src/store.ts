@@ -129,7 +129,7 @@ export interface GameState {
 
   // Actions
   setName: (name: string) => void;
-  trainStat: (stat: 'strength' | 'speed' | 'defense' | 'dexterity', gymId: string) => void;
+  trainStat: (stat: 'strength' | 'speed' | 'defense' | 'dexterity', gymId: string) => number | undefined;
   commitCrime: (crimeId: string) => void;
   attackPlayer: (targetId: string, type: 'mug' | 'hospitalize' | 'leave') => void;
   escapeJail: () => void;
@@ -269,7 +269,9 @@ export const useGameStore = create<GameState>()(
         if (state.level < gym.levelReq) return;
         if (gym.statReq && state[stat] < gym.statReq) return;
 
-        const baseGain = Math.floor((Math.random() * 3 + 1) * gym.multiplier);
+        // Calculate gym gain with happy multiplier
+        const happyMultiplier = state.happy > 0 ? Math.max(1, state.happy / 100) : 0.5;
+        const baseGain = Math.max(1, Math.floor((Math.random() * 3 + 2) * gym.multiplier * happyMultiplier));
         const newXp = state.xp + 5;
         const neededXp = xpForLevel(state.level);
         let newLevel = state.level;
@@ -296,6 +298,8 @@ export const useGameStore = create<GameState>()(
           life: newLevel > state.level ? newMaxLife : state.life, // Full heal on level up
           totalXpGained: state.totalXpGained + 5,
         });
+
+        return baseGain;
       },
 
       commitCrime: (crimeId) => {
