@@ -58,69 +58,93 @@ function App() {
       {showNameModal && <NameModal onClose={() => setShowNameModal(false)} />}
 
       {/* Top Status Bar */}
-      <header className="bg-gray-800 border-b border-gray-700 px-3 py-1.5 sticky top-0 z-50">
+      <header className="bg-gray-800 border-b border-gray-700 px-4 py-2 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-amber-400">🌃 TORN</span>
-              <span className="text-xs text-gray-400 hidden sm:inline">Lv.{store.level}</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-bold text-amber-400">🌃 TORN</span>
+              <div className="hidden sm:flex items-center gap-2 text-xs">
+                <span className="bg-gray-700 px-2 py-1 rounded text-gray-300">Lv.{store.level}</span>
+                <span className="text-gray-500">•</span>
+                <span className="text-gray-400">{store.rank}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3 text-xs">
-              <MiniBar label="Life" value={store.life} max={store.maxLife} color="bg-red-500" />
-              <MiniBar label="Energy" value={store.energy} max={store.maxEnergy} color="bg-green-500" />
-              <MiniBar label="Nerve" value={store.nerve} max={store.maxNerve} color="bg-orange-500" />
-              <MiniBar label="Happy" value={store.happy} max={store.maxHappy} color="bg-pink-500" />
-              <span className="text-green-400 font-mono hidden sm:inline">${store.cash.toLocaleString()}</span>
+            <div className="flex items-center gap-4">
+              <MiniBar label="Life" value={store.life} max={store.maxLife} color="bg-red-500" icon="❤️" />
+              <MiniBar label="Energy" value={store.energy} max={store.maxEnergy} color="bg-green-500" icon="⚡" />
+              <MiniBar label="Nerve" value={store.nerve} max={store.maxNerve} color="bg-orange-500" icon="🧠" />
+              <MiniBar label="Happy" value={store.happy} max={store.maxHappy} color="bg-pink-500" icon="😊" />
+              <div className="hidden md:flex items-center gap-2 bg-gray-700 px-3 py-1.5 rounded">
+                <span className="text-xs text-gray-400">💰</span>
+                <span className="text-sm text-green-400 font-mono font-bold">${store.cash.toLocaleString()}</span>
+              </div>
             </div>
           </div>
-          <div className="flex gap-1 mt-1 text-[10px] overflow-x-auto scrollbar-hide">
-            {store.inHospital && (
-              <span className="bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
-                🏥 Hospital <span className="font-bold font-mono">{store.hospitalTimer}</span>
-              </span>
-            )}
-            {store.inJail && (
-              <span className="bg-yellow-900/80 text-yellow-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
-                🔒 Jail <span className="font-bold font-mono">{store.jailTimer}</span>
-              </span>
-            )}
-            {store.isTraveling && (
-              <span className="bg-blue-900/80 text-blue-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
-                ✈️ Travel <span className="font-bold font-mono">{store.travelTimer}</span>
-              </span>
-            )}
-            {store.inEducation && (
-              <span className="bg-purple-900/80 text-purple-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
-                📚 Study <span className="font-bold font-mono">{store.educationTimer}</span>
-              </span>
-            )}
-            {ext.racingActive && (
-              <span className="bg-cyan-900/80 text-cyan-300 px-1.5 py-0.5 rounded whitespace-nowrap">
-                🏎️ Racing
-              </span>
-            )}
-            {store.bankInvestment > 0 && (
-              <span className="bg-green-900/80 text-green-300 px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
-                💰 Invest <span className="font-bold font-mono">{store.bankInvestmentTime}</span>
-              </span>
-            )}
-          </div>
+          {/* Status Timers */}
+          {(store.inHospital || store.inJail || store.isTraveling || store.inEducation || ext.racingActive || store.bankInvestment > 0) && (
+            <div className="flex gap-2 mt-2 text-[10px] overflow-x-auto scrollbar-hide">
+              {store.inHospital && (
+                <span className="bg-red-900/80 text-red-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-red-700">
+                  <span>🏥</span>
+                  <span className="font-semibold">Hospital</span>
+                  <span className="font-bold font-mono bg-red-800 px-1.5 py-0.5 rounded">{store.hospitalTimer}</span>
+                </span>
+              )}
+              {store.inJail && (
+                <span className="bg-yellow-900/80 text-yellow-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-yellow-700">
+                  <span>🔒</span>
+                  <span className="font-semibold">Jail</span>
+                  <span className="font-bold font-mono bg-yellow-800 px-1.5 py-0.5 rounded">{store.jailTimer}</span>
+                </span>
+              )}
+              {store.isTraveling && (
+                <span className="bg-blue-900/80 text-blue-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-blue-700">
+                  <span>✈️</span>
+                  <span className="font-semibold">Travel</span>
+                  <span className="font-bold font-mono bg-blue-800 px-1.5 py-0.5 rounded">{store.travelTimer}</span>
+                </span>
+              )}
+              {store.inEducation && (
+                <span className="bg-purple-900/80 text-purple-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-purple-700">
+                  <span>📚</span>
+                  <span className="font-semibold">Study</span>
+                  <span className="font-bold font-mono bg-purple-800 px-1.5 py-0.5 rounded">{store.educationTimer}</span>
+                </span>
+              )}
+              {ext.racingActive && (
+                <span className="bg-cyan-900/80 text-cyan-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-cyan-700">
+                  <span>🏎️</span>
+                  <span className="font-semibold">Racing</span>
+                </span>
+              )}
+              {store.bankInvestment > 0 && (
+                <span className="bg-green-900/80 text-green-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-green-700">
+                  <span>💰</span>
+                  <span className="font-semibold">Invest</span>
+                  <span className="font-bold font-mono bg-green-800 px-1.5 py-0.5 rounded">{store.bankInvestmentTime}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Navigation */}
-      <nav className="bg-gray-800/90 border-b border-gray-700 hidden md:block">
-        <div className="max-w-7xl mx-auto px-2">
-          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-1">
+      <nav className="bg-gray-800 border-b border-gray-700 hidden md:block sticky top-[68px] z-40">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2">
             {mainNavItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => handleMainNav(item.id)}
-                className={`px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors ${
-                  section === item.id ? 'bg-amber-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                  section === item.id 
+                    ? 'bg-amber-600 text-white shadow-md' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 }`}
               >
-                <span className="mr-1">{item.icon}</span>{item.label}
+                <span className="mr-1.5">{item.icon}</span>
+                {item.label}
               </button>
             ))}
           </div>
@@ -128,48 +152,57 @@ function App() {
       </nav>
 
       {/* Mobile Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 z-50">
-        <div className="flex justify-around p-1">
-          {mainNavItems.slice(0, 6).map(item => (
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t-2 border-amber-600 z-50 shadow-2xl">
+        <div className="flex justify-around items-center py-2 px-1">
+          {mainNavItems.slice(0, 5).map(item => (
             <button
               key={item.id}
               onClick={() => handleMainNav(item.id)}
-              className={`flex flex-col items-center p-1 rounded text-[10px] ${
-                section === item.id ? 'text-amber-400' : 'text-gray-400'
+              className={`flex flex-col items-center justify-center p-2 rounded-lg min-w-[56px] transition-all ${
+                section === item.id 
+                  ? 'text-amber-400 bg-gray-700' 
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
-              <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="text-xl mb-0.5">{item.icon}</span>
+              <span className="text-[9px] font-medium">{item.label}</span>
             </button>
           ))}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex flex-col items-center p-1 rounded text-[10px] text-gray-400"
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-w-[56px] transition-all ${
+              mobileMenuOpen ? 'text-amber-400 bg-gray-700' : 'text-gray-400 hover:text-white'
+            }`}
           >
-            <span className="text-base">☰</span>
-            <span>More</span>
+            <span className="text-xl mb-0.5">{mobileMenuOpen ? '✕' : '☰'}</span>
+            <span className="text-[9px] font-medium">More</span>
           </button>
         </div>
+        {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="absolute bottom-full left-0 right-0 bg-gray-800 border-t border-gray-700 p-2 grid grid-cols-3 gap-1 max-h-[60vh] overflow-y-auto">
-            {mainNavItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => handleMainNav(item.id)}
-                className={`flex flex-col items-center p-2 rounded text-xs ${
-                  section === item.id ? 'bg-amber-600 text-white' : 'text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                <span className="text-lg mb-0.5">{item.icon}</span>
-                <span className="text-[10px]">{item.label}</span>
-              </button>
-            ))}
+          <div className="absolute bottom-full left-0 right-0 bg-gray-800 border-t border-gray-700 p-3 shadow-2xl">
+            <div className="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
+              {mainNavItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => handleMainNav(item.id)}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg transition-all ${
+                    section === item.id 
+                      ? 'bg-amber-600 text-white shadow-md' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <span className="text-2xl mb-1">{item.icon}</span>
+                  <span className="text-[10px] font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-3 pb-20 md:pb-4">
+      <main className="flex-1 overflow-y-auto p-4 pb-24 md:pb-6">
         <div className="max-w-6xl mx-auto">
           {section === 'home' && <HomePage />}
           {section === 'items' && <ItemsPage />}
@@ -191,13 +224,14 @@ function App() {
 
 // ============ UTILITY COMPONENTS ============
 
-function MiniBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+function MiniBar({ label, value, max, color, icon }: { label: string; value: number; max: number; color: string; icon?: string }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
   const isLow = pct < 20;
   return (
     <div className="flex items-center gap-1.5">
+      {icon && <span className="text-sm">{icon}</span>}
       <span className={`text-[10px] font-medium min-w-[36px] ${isLow ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{label}</span>
-      <div className="w-16 h-2.5 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+      <div className="w-20 h-2.5 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
         <div 
           className={`h-full ${color} transition-all duration-300 ${isLow ? 'animate-pulse' : ''}`} 
           style={{ width: `${pct}%` }} 
@@ -240,8 +274,12 @@ function NameModal({ onClose }: { onClose: () => void }) {
 
 function SectionCard({ title, children, className = '' }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-gray-800 rounded-xl p-4 border border-gray-700 ${className}`}>
-      {title && <h3 className="text-lg font-bold text-amber-400 mb-3">{title}</h3>}
+    <div className={`bg-gray-800 rounded-xl p-5 border border-gray-700 shadow-md ${className}`}>
+      {title && (
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-700">
+          <h3 className="text-lg font-bold text-amber-400">{title}</h3>
+        </div>
+      )}
       {children}
     </div>
   );
@@ -283,7 +321,7 @@ function HomePage() {
   const xpNeeded = Math.floor(100 * Math.pow(1.5, store.level - 1));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Active Timers */}
       {(store.inHospital || store.inJail || store.isTraveling || store.inEducation) && (
         <div className="space-y-2">
@@ -294,57 +332,75 @@ function HomePage() {
         </div>
       )}
 
+      {/* Character Overview */}
       <SectionCard>
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 bg-gray-700 rounded-full flex items-center justify-center text-2xl">👤</div>
-          <div>
-            <h2 className="text-lg font-bold text-white">{store.name}</h2>
-            <p className="text-sm text-amber-400">Level {store.level} • {store.rank}</p>
-            <p className="text-xs text-gray-400">Age: {store.age} days</p>
+        <div className="flex items-center gap-4 mb-5">
+          <div className="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center text-3xl shadow-lg">
+            👤
           </div>
-          <div className="ml-auto text-right">
-            <p className="text-green-400 font-mono font-bold">${store.cash.toLocaleString()}</p>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-white mb-1">{store.name}</h2>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded text-xs font-medium">
+                Level {store.level}
+              </span>
+              <span className="text-gray-400 text-xs">•</span>
+              <span className="text-gray-300 text-xs">{store.rank}</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Age: {store.age} days</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xl text-green-400 font-mono font-bold">${store.cash.toLocaleString()}</p>
             <p className="text-xs text-gray-400">Bank: ${store.bank.toLocaleString()}</p>
           </div>
         </div>
-        <div className="mb-3">
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Level Progress</span>
-            <span>{store.xp} / {xpNeeded} XP</span>
+        
+        {/* XP Progress */}
+        <div className="mb-4">
+          <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+            <span className="font-medium">Level Progress</span>
+            <span className="font-mono">{store.xp} / {xpNeeded} XP</span>
           </div>
-          <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-            <div className="h-full bg-purple-500 transition-all" style={{ width: `${(store.xp / xpNeeded) * 100}%` }} />
+          <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+            <div 
+              className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-500" 
+              style={{ width: `${(store.xp / xpNeeded) * 100}%` }} 
+            />
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
-          <div className="bg-gray-700/50 rounded p-2">
-            <p className="text-red-400 font-bold">{store.strength}</p>
-            <p className="text-gray-500">STR</p>
+
+        {/* Battle Stats */}
+        <div className="grid grid-cols-4 gap-3">
+          <div className="bg-gradient-to-br from-red-900/30 to-red-800/30 border border-red-700/50 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-red-400">{store.strength}</p>
+            <p className="text-[10px] text-gray-400 font-medium mt-0.5">STR</p>
           </div>
-          <div className="bg-gray-700/50 rounded p-2">
-            <p className="text-blue-400 font-bold">{store.speed}</p>
-            <p className="text-gray-500">SPD</p>
+          <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/30 border border-blue-700/50 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-blue-400">{store.speed}</p>
+            <p className="text-[10px] text-gray-400 font-medium mt-0.5">SPD</p>
           </div>
-          <div className="bg-gray-700/50 rounded p-2">
-            <p className="text-green-400 font-bold">{store.defense}</p>
-            <p className="text-gray-500">DEF</p>
+          <div className="bg-gradient-to-br from-green-900/30 to-green-800/30 border border-green-700/50 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-green-400">{store.defense}</p>
+            <p className="text-[10px] text-gray-400 font-medium mt-0.5">DEF</p>
           </div>
-          <div className="bg-gray-700/50 rounded p-2">
-            <p className="text-yellow-400 font-bold">{store.dexterity}</p>
-            <p className="text-gray-500">DEX</p>
+          <div className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/30 border border-yellow-700/50 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-yellow-400">{store.dexterity}</p>
+            <p className="text-[10px] text-gray-400 font-medium mt-0.5">DEX</p>
           </div>
         </div>
       </SectionCard>
 
       {/* Resource Bars */}
       <SectionCard title="📊 Resources">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <ResourceBar label="Life" value={store.life} max={store.maxLife} color="bg-red-500" icon="❤️" />
           <ResourceBar label="Energy" value={store.energy} max={store.maxEnergy} color="bg-green-500" icon="⚡" />
           <ResourceBar label="Nerve" value={store.nerve} max={store.maxNerve} color="bg-orange-500" icon="🧠" />
           <ResourceBar label="Happy" value={store.happy} max={store.maxHappy} color="bg-pink-500" icon="😊" />
         </div>
-        <p className="text-[10px] text-gray-500 mt-2 text-center">Resources regenerate over time</p>
+        <div className="mt-4 pt-3 border-t border-gray-700">
+          <p className="text-[10px] text-gray-500 text-center">Resources regenerate over time</p>
+        </div>
       </SectionCard>
     </div>
   );
@@ -358,11 +414,11 @@ function ResourceBar({ label, value, max, color, icon }: { label: string; value:
     <div className="flex items-center gap-2">
       <span className="text-lg">{icon}</span>
       <div className="flex-1">
-        <div className="flex justify-between text-xs mb-0.5">
+        <div className="flex justify-between text-xs mb-1">
           <span className={`font-medium ${isLow ? 'text-red-400' : 'text-gray-300'}`}>{label}</span>
           <span className={`font-mono ${isLow ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{value}/{max}</span>
         </div>
-        <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+        <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
           <div className={`h-full ${color} transition-all duration-300 ${isLow ? 'animate-pulse' : ''}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
@@ -551,16 +607,18 @@ const cityLocationsList: { id: CityLocation; label: string; icon: string; distri
 
 function CityMap({ onNavigate }: { onNavigate: (loc: CityLocation) => void }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-amber-400">🏙️ Torn City</h2>
-      <p className="text-gray-400 text-sm">Navigate to different locations in the city.</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-bold text-amber-400 mb-2">🏙️ Torn City</h2>
+        <p className="text-gray-400 text-sm">Navigate to different locations in the city.</p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {cityLocationsList.map(loc => (
           <button key={loc.id} onClick={() => onNavigate(loc.id)}
-            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-3 text-left transition-colors border border-gray-700">
-            <span className="text-lg">{loc.icon}</span>
-            <p className="text-xs text-white font-medium mt-1">{loc.label}</p>
-            <p className="text-[10px] text-gray-500">{loc.district}</p>
+            className="bg-gray-800 hover:bg-gray-700 rounded-xl p-4 text-left transition-all border border-gray-700 hover:border-amber-600 hover:shadow-lg group">
+            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{loc.icon}</div>
+            <p className="text-sm text-white font-semibold">{loc.label}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{loc.district}</p>
           </button>
         ))}
       </div>
@@ -1111,22 +1169,27 @@ function GymPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-amber-400">💪 Gym</h2>
-      <p className="text-gray-400 text-sm">Train your battle stats. Each session costs 5 energy.</p>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-bold text-amber-400 mb-2">💪 Gym</h2>
+        <p className="text-gray-400 text-sm">Train your battle stats. Each session costs 5 energy.</p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {gyms.map(g => {
           const available = store.level >= g.levelReq && (!g.statReq || Math.max(store.strength, store.speed, store.defense, store.dexterity) >= g.statReq);
           return (
             <button key={g.id} onClick={() => setSelectedGym(g.id)}
-              className={`p-3 rounded-lg text-left border transition-colors ${
-                selectedGym === g.id ? 'bg-amber-600/20 border-amber-600' :
-                available ? 'bg-gray-800 border-gray-700 hover:border-gray-500' : 'bg-gray-800 border-gray-800 opacity-50'
+              className={`p-4 rounded-xl text-left border-2 transition-all ${
+                selectedGym === g.id ? 'bg-amber-600/20 border-amber-600 shadow-lg' :
+                available ? 'bg-gray-800 border-gray-700 hover:border-gray-500 hover:shadow-md' : 'bg-gray-800 border-gray-800 opacity-50'
               }`}>
-              <p className="text-sm font-bold text-white">{g.name}</p>
-              <p className="text-[10px] text-gray-400">Multiplier: x{g.multiplier}</p>
-              <p className="text-[10px] text-gray-500">Lvl {g.levelReq}+ {g.statReq ? `• ${g.statReq}+ stat` : ''}</p>
+              <p className="text-sm font-bold text-white mb-1">{g.name}</p>
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="bg-gray-700 px-2 py-0.5 rounded text-amber-400 font-medium">x{g.multiplier}</span>
+                <span className="text-gray-500">Lvl {g.levelReq}+</span>
+              </div>
+              {g.statReq && <p className="text-[10px] text-gray-500 mt-1">{g.statReq}+ stat required</p>}
             </button>
           );
         })}
@@ -1135,20 +1198,26 @@ function GymPage() {
       <SectionCard title={`Training at: ${gym?.name || 'Basic Gym'} (x${gym?.multiplier || 1})`}>
         <div className="grid grid-cols-2 gap-3">
           {([
-            { stat: 'strength' as const, label: 'Strength', icon: '💪', color: 'bg-red-700 hover:bg-red-600', current: store.strength },
-            { stat: 'speed' as const, label: 'Speed', icon: '⚡', color: 'bg-blue-700 hover:bg-blue-600', current: store.speed },
-            { stat: 'defense' as const, label: 'Defense', icon: '🛡️', color: 'bg-green-700 hover:bg-green-600', current: store.defense },
-            { stat: 'dexterity' as const, label: 'Dexterity', icon: '🎯', color: 'bg-yellow-700 hover:bg-yellow-600', current: store.dexterity },
+            { stat: 'strength' as const, label: 'Strength', icon: '💪', color: 'bg-gradient-to-br from-red-700 to-red-600 hover:from-red-600 hover:to-red-500', current: store.strength },
+            { stat: 'speed' as const, label: 'Speed', icon: '⚡', color: 'bg-gradient-to-br from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500', current: store.speed },
+            { stat: 'defense' as const, label: 'Defense', icon: '🛡️', color: 'bg-gradient-to-br from-green-700 to-green-600 hover:from-green-600 hover:to-green-500', current: store.defense },
+            { stat: 'dexterity' as const, label: 'Dexterity', icon: '🎯', color: 'bg-gradient-to-br from-yellow-700 to-yellow-600 hover:from-yellow-600 hover:to-yellow-500', current: store.dexterity },
           ]).map(s => (
             <button key={s.stat} onClick={() => handleTrain(s.stat)} disabled={store.energy < 5 || !canUseGym}
-              className={`${s.color} disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg p-4 text-center transition-colors`}>
-              <span className="text-2xl">{s.icon}</span>
-              <p className="font-bold text-sm mt-1">{s.label}</p>
-              <p className="text-xs opacity-75">Current: {s.current}</p>
+              className={`${s.color} disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-500 text-white rounded-xl p-5 text-center transition-all shadow-md hover:shadow-lg disabled:shadow-none`}>
+              <span className="text-3xl">{s.icon}</span>
+              <p className="font-bold text-sm mt-2">{s.label}</p>
+              <p className="text-xs opacity-75 mt-1">Current: {s.current}</p>
             </button>
           ))}
         </div>
-        {message && <p className="text-sm text-center mt-3 text-amber-300">{message}</p>}
+        {message && (
+          <div className={`mt-4 p-3 rounded-lg text-center text-sm font-medium ${
+            message.includes('❌') ? 'bg-red-900/30 border border-red-700 text-red-300' : 'bg-green-900/30 border border-green-700 text-green-300'
+          }`}>
+            {message}
+          </div>
+        )}
       </SectionCard>
     </div>
   );
@@ -1161,13 +1230,22 @@ function CrimesPage() {
   const [lastCrimeResult, setLastCrimeResult] = useState<{success: boolean; reward?: number; jailed?: boolean} | null>(null);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-amber-400">🔫 Crimes & Combat</h2>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-bold text-amber-400 mb-2">🔫 Crimes & Combat</h2>
+        <p className="text-gray-400 text-sm">Commit crimes, fight enemies, or plan organized operations.</p>
+      </div>
       
-      <div className="flex gap-2">
-        <button onClick={() => setTab('crimes')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'crimes' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Crimes</button>
-        <button onClick={() => setTab('combat')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'combat' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Combat</button>
-        <button onClick={() => setTab('organized')} className={`px-3 py-1.5 rounded text-xs font-medium ${tab === 'organized' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Organized Crime</button>
+      <div className="flex gap-2 bg-gray-800 p-2 rounded-lg border border-gray-700">
+        <button onClick={() => setTab('crimes')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'crimes' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+          🔫 Crimes
+        </button>
+        <button onClick={() => setTab('combat')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'combat' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+          ⚔️ Combat
+        </button>
+        <button onClick={() => setTab('organized')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'organized' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+          🕵️ Organized
+        </button>
       </div>
 
       {tab === 'crimes' && (
