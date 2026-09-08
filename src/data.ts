@@ -86,8 +86,8 @@ export interface Job {
 }
 
 export const jobs: Job[] = [
-  { id: 'grocer', name: 'Grocer', company: 'Supermarket', salary: 500, statReq: { manualLabor: 5 }, levelReq: 1, statGain: { manualLabor: 2, endurance: 1 } },
-  { id: 'cashier', name: 'Cashier', company: 'Casino', salary: 600, statReq: { intelligence: 5 }, levelReq: 1, statGain: { intelligence: 2 } },
+  { id: 'grocer', name: 'Grocer', company: 'Supermarket', salary: 500, statReq: {}, levelReq: 1, statGain: { manualLabor: 2, endurance: 1 } },
+  { id: 'cashier', name: 'Cashier', company: 'Casino', salary: 600, statReq: {}, levelReq: 1, statGain: { intelligence: 2 } },
   { id: 'soldier', name: 'Soldier', company: 'Army', salary: 800, statReq: { manualLabor: 10, endurance: 5 }, levelReq: 3, statGain: { manualLabor: 3, endurance: 2 } },
   { id: 'nurse', name: 'Nurse', company: 'Medical Center', salary: 1000, statReq: { intelligence: 15, endurance: 10 }, levelReq: 5, statGain: { intelligence: 3, endurance: 2 } },
   { id: 'detective', name: 'Detective', company: 'Law Enforcement', salary: 1200, statReq: { intelligence: 20, endurance: 15 }, levelReq: 8, statGain: { intelligence: 4, endurance: 3 } },

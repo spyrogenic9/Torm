@@ -149,45 +149,63 @@ function App() {
           {(store.inHospital || store.inJail || store.isTraveling || store.inEducation || ext.racingActive || store.bankInvestment > 0) && (
             <div className="flex gap-2 mt-2 text-[10px] overflow-x-auto scrollbar-hide">
               {store.inHospital && (
-                <span className="bg-red-900/80 text-red-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-red-700">
+                <button 
+                  onClick={() => { setSection('city'); setCityLocation('hospital'); }}
+                  className="bg-red-900/80 text-red-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-red-700 hover:bg-red-800/80 transition-colors cursor-pointer"
+                >
                   <span>🏥</span>
                   <span className="font-semibold">Hospital</span>
-                  <span className="font-bold font-mono bg-red-800 px-1.5 py-0.5 rounded">{store.hospitalTimer}</span>
-                </span>
+                  <span className="font-bold font-mono bg-red-800 px-1.5 py-0.5 rounded">{store.hospitalTimer}s</span>
+                </button>
               )}
               {store.inJail && (
-                <span className="bg-yellow-900/80 text-yellow-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-yellow-700">
+                <button 
+                  onClick={() => { setSection('city'); setCityLocation('jail'); }}
+                  className="bg-yellow-900/80 text-yellow-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-yellow-700 hover:bg-yellow-800/80 transition-colors cursor-pointer"
+                >
                   <span>🔒</span>
                   <span className="font-semibold">Jail</span>
-                  <span className="font-bold font-mono bg-yellow-800 px-1.5 py-0.5 rounded">{store.jailTimer}</span>
-                </span>
+                  <span className="font-bold font-mono bg-yellow-800 px-1.5 py-0.5 rounded">{store.jailTimer}s</span>
+                </button>
               )}
               {store.isTraveling && (
-                <span className="bg-blue-900/80 text-blue-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-blue-700">
+                <button 
+                  onClick={() => setSection('travel')}
+                  className="bg-blue-900/80 text-blue-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-blue-700 hover:bg-blue-800/80 transition-colors cursor-pointer"
+                >
                   <span>✈️</span>
                   <span className="font-semibold">Travel</span>
-                  <span className="font-bold font-mono bg-blue-800 px-1.5 py-0.5 rounded">{store.travelTimer}</span>
-                </span>
+                  <span className="font-bold font-mono bg-blue-800 px-1.5 py-0.5 rounded">{store.travelTimer}s</span>
+                </button>
               )}
               {store.inEducation && (
-                <span className="bg-purple-900/80 text-purple-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-purple-700">
+                <button 
+                  onClick={() => setSection('education')}
+                  className="bg-purple-900/80 text-purple-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-purple-700 hover:bg-purple-800/80 transition-colors cursor-pointer"
+                >
                   <span>📚</span>
                   <span className="font-semibold">Study</span>
-                  <span className="font-bold font-mono bg-purple-800 px-1.5 py-0.5 rounded">{store.educationTimer}</span>
-                </span>
+                  <span className="font-bold font-mono bg-purple-800 px-1.5 py-0.5 rounded">{store.educationTimer}s</span>
+                </button>
               )}
               {ext.racingActive && (
-                <span className="bg-cyan-900/80 text-cyan-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-cyan-700">
+                <button 
+                  onClick={() => setSection('travel')}
+                  className="bg-cyan-900/80 text-cyan-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-cyan-700 hover:bg-cyan-800/80 transition-colors cursor-pointer"
+                >
                   <span>🏎️</span>
                   <span className="font-semibold">Racing</span>
-                </span>
+                </button>
               )}
               {store.bankInvestment > 0 && (
-                <span className="bg-green-900/80 text-green-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-green-700">
+                <button 
+                  onClick={() => { setSection('city'); setCityLocation('bank'); }}
+                  className="bg-green-900/80 text-green-300 px-2 py-1 rounded whitespace-nowrap flex items-center gap-1.5 border border-green-700 hover:bg-green-800/80 transition-colors cursor-pointer"
+                >
                   <span>💰</span>
                   <span className="font-semibold">Invest</span>
-                  <span className="font-bold font-mono bg-green-800 px-1.5 py-0.5 rounded">{store.bankInvestmentTime}</span>
-                </span>
+                  <span className="font-bold font-mono bg-green-800 px-1.5 py-0.5 rounded">{store.bankInvestmentTime}s</span>
+                </button>
               )}
             </div>
           )}
@@ -1498,6 +1516,15 @@ function CrimesPage() {
                   const success = newState.cash > prevCash;
                   const jailed = !prevJail && newState.inJail;
                   const reward = success ? newState.cash - prevCash : 0;
+                  
+                  if (success) {
+                    addNotification(`✅ ${crime.name} successful! Earned $${reward.toLocaleString()}`, 'success');
+                  } else if (jailed) {
+                    addNotification(`❌ ${crime.name} failed! You were sent to jail!`, 'error');
+                  } else {
+                    addNotification(`❌ ${crime.name} failed!`, 'error');
+                  }
+                  
                   setLastCrimeResult({ success, reward, jailed });
                   setTimeout(() => setLastCrimeResult(null), 3000);
                 }, 100);
@@ -1586,6 +1613,15 @@ function CombatSection() {
       const newState = useGameStore.getState();
       const won = !newState.inHospital || prevHospitalized;
       const hospitalized = !prevHospitalized && newState.inHospital;
+      
+      if (won) {
+        addNotification(`✅ Victory! Defeated ${enemy?.name || 'Unknown'}`, 'success');
+      } else if (hospitalized) {
+        addNotification(`❌ Defeated! You were hospitalized!`, 'error');
+      } else {
+        addNotification(`❌ Defeated by ${enemy?.name || 'Unknown'}`, 'error');
+      }
+      
       setCombatResult({ 
         won: !hospitalized, 
         enemy: enemy?.name || 'Unknown', 
