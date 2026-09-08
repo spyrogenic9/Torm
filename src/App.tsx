@@ -1009,7 +1009,6 @@ function HospitalLocation() {
 
 function JailLocation() {
   const store = useGameStore();
-  const [message, setMessage] = useState('');
   const bailCost = Math.floor(store.jailTimer * 500);
 
   return (
@@ -1023,35 +1022,30 @@ function JailLocation() {
           
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => {
+              const wasInJail = store.inJail;
               store.escapeJail();
-              if (!store.inJail) {
-                setMessage('✅ Escaped successfully!');
-              } else {
-                setMessage('❌ Escape failed! Time increased.');
-              }
-              setTimeout(() => setMessage(''), 2000);
+              setTimeout(() => {
+                const nowInJail = useGameStore.getState().inJail;
+                if (wasInJail && !nowInJail) {
+                  addNotification('✅ Escaped successfully!', 'success');
+                } else {
+                  addNotification('❌ Escape failed! Time increased.', 'error');
+                }
+              }, 100);
             }} className="py-2 bg-orange-700 hover:bg-orange-600 text-white rounded text-sm">
               Escape (40% chance)
             </button>
             <button onClick={() => {
               if (store.cash >= bailCost) {
                 store.bailFromJail();
-                setMessage('✅ Bailed out!');
-                setTimeout(() => setMessage(''), 2000);
+                addNotification('✅ Bailed out!', 'success');
               } else {
-                setMessage('❌ Not enough cash!');
-                setTimeout(() => setMessage(''), 2000);
+                addNotification('❌ Not enough cash!', 'error');
               }
             }} disabled={store.cash < bailCost} className="py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
               Bail (${bailCost.toLocaleString()})
             </button>
           </div>
-          
-          {message && (
-            <div className={`p-2 rounded text-center text-sm ${message.includes('✅') ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
-              {message}
-            </div>
-          )}
         </div>
       ) : (
         <div className="bg-green-900/30 border border-green-800 rounded p-4 text-center">
@@ -1095,10 +1089,12 @@ function MuseumLocation() {
 
 function DumpLocation() {
   const store = useGameStore();
-  const [message, setMessage] = useState('');
 
   const handleSearch = () => {
-    if (store.energy < 1) { setMessage('Not enough energy!'); return; }
+    if (store.energy < 1) { 
+      addNotification('❌ Not enough energy!', 'error');
+      return; 
+    }
     useGameStore.setState({ energy: store.energy - 1 });
     
     const findChance = Math.random();
@@ -1110,9 +1106,9 @@ function DumpLocation() {
       } else {
         useGameStore.setState({ inventory: [...store.inventory, { itemId: randomItem.id, quantity: 1 }] });
       }
-      setMessage(`Found: ${randomItem.name}!`);
+      addNotification(`✅ Found: ${randomItem.name}!`, 'success');
     } else {
-      setMessage('Found nothing useful.');
+      addNotification('Found nothing useful.', 'info');
     }
   };
 
@@ -1123,7 +1119,6 @@ function DumpLocation() {
         className="w-full py-2 bg-orange-700 hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
         Search Dump (1 Energy)
       </button>
-      {message && <p className="text-sm text-center mt-2 text-amber-300">{message}</p>}
     </SectionCard>
   );
 }
@@ -1152,12 +1147,14 @@ function PostOfficeLocation() {
 
 function ChurchLocation() {
   const store = useGameStore();
-  const [message, setMessage] = useState('');
 
   const pray = () => {
-    if (store.energy < 1) { setMessage('Not enough energy!'); return; }
+    if (store.energy < 1) { 
+      addNotification('❌ Not enough energy!', 'error');
+      return; 
+    }
     useGameStore.setState({ energy: store.energy - 1, happy: Math.min(store.maxHappy, store.happy + 5) });
-    setMessage('You feel blessed. +5 Happy');
+    addNotification('✅ You feel blessed. +5 Happy', 'success');
   };
 
   return (
@@ -1167,7 +1164,6 @@ function ChurchLocation() {
         className="w-full py-2 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
         Pray (1 Energy, +5 Happy)
       </button>
-      {message && <p className="text-sm text-center mt-2 text-blue-300">{message}</p>}
     </SectionCard>
   );
 }
@@ -1568,18 +1564,15 @@ function CrimesPage() {
 
 function CombatSection() {
   const store = useGameStore();
-  const [message, setMessage] = useState('');
   const [combatResult, setCombatResult] = useState<{won: boolean; enemy: string; type: string; hospitalized?: boolean} | null>(null);
 
   const handleAttack = (enemyId: string, type: 'mug' | 'hospitalize' | 'leave') => {
     if (store.energy < 5) {
-      setMessage('❌ Not enough energy!');
-      setTimeout(() => setMessage(''), 2000);
+      addNotification('❌ Not enough energy!', 'error');
       return;
     }
     if (store.inHospital || store.inJail) {
-      setMessage('❌ Cannot attack while in hospital or jail!');
-      setTimeout(() => setMessage(''), 2000);
+      addNotification('❌ Cannot attack while in hospital or jail!', 'error');
       return;
     }
     
@@ -1609,12 +1602,6 @@ function CombatSection() {
         <span className="text-gray-400">Battle Power: <span className="text-amber-400 font-bold">{store.strength + store.speed + store.defense + store.dexterity}</span></span>
         <span className="text-gray-400">Energy: <span className="text-green-400 font-bold">{store.energy}/{store.maxEnergy}</span></span>
       </div>
-
-      {message && (
-        <div className="bg-blue-900/30 border border-blue-800 rounded p-2 text-center">
-          <p className="text-blue-300 text-sm">{message}</p>
-        </div>
-      )}
 
       {/* Combat Result */}
       {combatResult && (
@@ -1717,7 +1704,10 @@ function TravelPage() {
                 <div key={dest.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
                   <p className="text-sm font-bold text-white">{dest.name}</p>
                   <p className="text-[10px] text-gray-400">Flight: {dest.flightTime} min • ${dest.cost}</p>
-                  <button onClick={() => { store.travel(dest.id); setMessage(`Flying to ${dest.name}!`); }}
+                  <button onClick={() => { 
+                    store.travel(dest.id); 
+                    addNotification(`✈️ Flying to ${dest.name}!`, 'success');
+                  }}
                     className="mt-2 w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs">
                     Fly (${dest.cost})
                   </button>
@@ -1747,11 +1737,10 @@ function TravelPage() {
                 if (store.points >= 1) {
                   useExtendedStore.setState({ racingLicense: true });
                   useGameStore.setState({ points: store.points - 1 });
-                  setMessage('✅ Racing license purchased!');
+                  addNotification('✅ Racing license purchased!', 'success');
                 } else {
-                  setMessage('❌ Need 1 Point to buy racing license');
+                  addNotification('❌ Need 1 Point to buy racing license', 'error');
                 }
-                setTimeout(() => setMessage(''), 2000);
               }} className="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white rounded text-sm">
                 Buy Racing License (1 Point)
               </button>
@@ -1780,7 +1769,10 @@ function TravelPage() {
                               {ext.racingCar === car.id ? 'Equipped' : 'Equip'}
                             </button>
                           ) : (
-                            <button onClick={() => { ext.buyCar(car.id); setMessage(`Bought ${car.name}!`); setTimeout(() => setMessage(''), 2000); }}
+                            <button onClick={() => { 
+                              ext.buyCar(car.id); 
+                              addNotification(`✅ Bought ${car.name}!`, 'success');
+                            }}
                               disabled={!canBuy}
                               className="px-2 py-1 bg-green-700 hover:bg-green-600 disabled:bg-gray-600 text-white rounded text-[10px]">
                               ${car.price.toLocaleString()}
@@ -1797,7 +1789,10 @@ function TravelPage() {
                     <p className="text-xs text-gray-400 mb-2">Race Tracks:</p>
                     <div className="grid grid-cols-2 gap-2">
                       {raceTracks.map(track => (
-                        <button key={track.id} onClick={() => { ext.startRace(track.id); setMessage(`Racing on ${track.name}!`); setTimeout(() => setMessage(''), 2000); }}
+                        <button key={track.id} onClick={() => { 
+                          ext.startRace(track.id); 
+                          addNotification(`🏎️ Racing on ${track.name}!`, 'success');
+                        }}
                           className="bg-gray-700 hover:bg-gray-600 rounded p-2 text-left">
                           <p className="text-xs font-bold text-white">{track.name}</p>
                           <p className="text-[10px] text-gray-400">Difficulty: {track.difficulty} • {track.length}</p>
@@ -1841,7 +1836,10 @@ function TravelPage() {
                         <span className="text-blue-400">{successChance.toFixed(0)}%</span>
                       </div>
                     </div>
-                    <button onClick={() => { ext.hunt(animal.id); setMessage(`Hunting ${animal.name}...`); setTimeout(() => setMessage(''), 2000); }}
+                    <button onClick={() => { 
+                      ext.hunt(animal.id); 
+                      addNotification(`🦁 Hunting ${animal.name}...`, 'info');
+                    }}
                       disabled={!canHunt}
                       className="px-2 py-1 bg-orange-700 hover:bg-orange-600 disabled:bg-gray-600 text-white rounded text-[10px]">
                       {animal.energyCost} EN
@@ -2035,7 +2033,6 @@ function FactionPage() {
   const ext = useExtendedStore();
   const [tab, setTab] = useState<'info' | 'warfare' | 'forum'>('info');
   const [factionNameInput, setFactionNameInput] = useState('');
-  const [message, setMessage] = useState('');
 
   return (
     <div className="space-y-4">
@@ -2050,7 +2047,7 @@ function FactionPage() {
               <button onClick={() => {
                 if (factionNameInput.trim()) {
                   store.joinFaction(factionNameInput.trim());
-                  setMessage(`Joined ${factionNameInput}!`);
+                  addNotification(`✅ Joined ${factionNameInput}!`, 'success');
                   setFactionNameInput('');
                 }
               }} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-sm">Join</button>
@@ -2058,7 +2055,7 @@ function FactionPage() {
             <button onClick={() => {
               if (store.cash >= 50000 && factionNameInput.trim()) {
                 store.createFaction(factionNameInput.trim());
-                setMessage(`Created faction: ${factionNameInput}!`);
+                addNotification(`✅ Created faction: ${factionNameInput}!`, 'success');
                 setFactionNameInput('');
               }
             }} disabled={store.cash < 50000}
@@ -2066,7 +2063,6 @@ function FactionPage() {
               Create New Faction ($50,000)
             </button>
           </div>
-          {message && <p className="text-green-400 text-xs mt-2">{message}</p>}
         </SectionCard>
       ) : (
         <>
@@ -2232,6 +2228,16 @@ function ProfilePage() {
               <StatBar label="Defense" value={store.defense} color="bg-green-500" />
               <StatBar label="Dexterity" value={store.dexterity} color="bg-yellow-500" />
             </div>
+            <p className="text-[10px] text-gray-500 mt-2">💡 Train at Gym to increase battle stats</p>
+          </SectionCard>
+
+          <SectionCard title="💼 Working Stats">
+            <div className="space-y-2">
+              <StatBar label="Manual Labor" value={store.manualLabor} color="bg-orange-500" />
+              <StatBar label="Intelligence" value={store.intelligence} color="bg-purple-500" />
+              <StatBar label="Endurance" value={store.endurance} color="bg-cyan-500" />
+            </div>
+            <p className="text-[10px] text-gray-500 mt-2">💡 Work at Jobs to increase working stats</p>
           </SectionCard>
         </div>
       )}
