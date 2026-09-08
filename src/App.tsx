@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from './store';
 import { useExtendedStore } from './store2';
 import { crimes, gyms, courses, jobs, items, npcEnemies, stocks, properties, destinations, casinoGames } from './data';
@@ -6,6 +6,71 @@ import { organizedCrimes, territories, cars, raceTracks, huntAnimals, missions, 
 
 type MainSection = 'home' | 'items' | 'city' | 'jobs' | 'gym' | 'crimes' | 'travel' | 'education' | 'properties' | 'faction' | 'messages' | 'profile';
 type CityLocation = 'bank' | 'casino' | 'loan_shark' | 'item_market' | 'stock_market' | 'auction' | 'points_market' | 'hospital' | 'jail' | 'museum' | 'dump' | 'shops' | 'post_office' | 'church' | 'community';
+
+interface Notification {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  timestamp: number;
+}
+
+// Global notification state
+let globalNotifications: Notification[] = [];
+let notificationListeners: (() => void)[] = [];
+
+function addNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {
+  const notification: Notification = {
+    id: Date.now().toString() + Math.random(),
+    message,
+    type,
+    timestamp: Date.now()
+  };
+  globalNotifications = [notification, ...globalNotifications].slice(0, 5);
+  notificationListeners.forEach(fn => fn());
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    globalNotifications = globalNotifications.filter(n => n.id !== notification.id);
+    notificationListeners.forEach(fn => fn());
+  }, 3000);
+}
+
+function useNotifications() {
+  const [notifications, setNotifications] = useState<Notification[]>(globalNotifications);
+  
+  useEffect(() => {
+    const listener = () => setNotifications([...globalNotifications]);
+    notificationListeners.push(listener);
+    return () => {
+      notificationListeners = notificationListeners.filter(l => l !== listener);
+    };
+  }, []);
+  
+  return notifications;
+}
+
+function FloatingNotifications() {
+  const notifications = useNotifications();
+  
+  if (notifications.length === 0) return null;
+  
+  return (
+    <div className="fixed top-20 right-4 z-[100] space-y-2 max-w-sm">
+      {notifications.map(notif => (
+        <div
+          key={notif.id}
+          className={`p-3 rounded-lg shadow-lg border animate-slide-in ${
+            notif.type === 'success' ? 'bg-green-900/95 border-green-700 text-green-100' :
+            notif.type === 'error' ? 'bg-red-900/95 border-red-700 text-red-100' :
+            'bg-blue-900/95 border-blue-700 text-blue-100'
+          }`}
+        >
+          <p className="text-sm font-medium">{notif.message}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function App() {
   const [section, setSection] = useState<MainSection>('home');
@@ -201,6 +266,9 @@ function App() {
         )}
       </div>
 
+      {/* Floating Notifications */}
+      <FloatingNotifications />
+
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 pb-24 md:pb-6">
         <div className="max-w-6xl mx-auto">
@@ -325,7 +393,7 @@ function TimerDisplay({ label, time, icon, color = 'amber' }: { label: string; t
       </div>
       <div className="text-right">
         <p className="text-lg font-bold font-mono">{time}</p>
-        <p className="text-[10px] opacity-75">ticks</p>
+        <p className="text-[10px] opacity-75">seconds</p>
       </div>
     </div>
   );
@@ -678,24 +746,45 @@ function BankLocation() {
           <p className="text-xs text-gray-400">Balance</p>
           <p className="text-xl font-bold text-green-400">${store.bank.toLocaleString()}</p>
           {store.bankInvestment > 0 && (
-            <p className="text-xs text-blue-400 mt-1">Investment: ${store.bankInvestment.toLocaleString()} ({store.bankInvestmentTime} ticks)</p>
+            <p className="text-xs text-blue-400 mt-1">Investment: ${store.bankInvestment.toLocaleString()} ({store.bankInvestmentTime}s)</p>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
             <input type="number" value={depositAmt} onChange={e => setDepositAmt(e.target.value)} placeholder="Deposit" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
             <QuickAmountButtons amount={depositAmt} setAmount={setDepositAmt} maxAmount={store.cash} />
-            <button onClick={() => { store.depositBank(Number(depositAmt)); setDepositAmt(''); }} className="w-full px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs mt-1">Deposit</button>
+            <button onClick={() => { 
+              const amt = Number(depositAmt);
+              if (amt <= 0) { addNotification('❌ Invalid amount', 'error'); return; }
+              if (amt > store.cash) { addNotification('❌ Not enough cash', 'error'); return; }
+              store.depositBank(amt); 
+              addNotification(`✅ Deposited $${amt.toLocaleString()}`, 'success');
+              setDepositAmt(''); 
+            }} className="w-full px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs mt-1">Deposit</button>
           </div>
           <div>
             <input type="number" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Withdraw" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
             <QuickAmountButtons amount={withdrawAmt} setAmount={setWithdrawAmt} maxAmount={store.bank} />
-            <button onClick={() => { store.withdrawBank(Number(withdrawAmt)); setWithdrawAmt(''); }} className="w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs mt-1">Withdraw</button>
+            <button onClick={() => { 
+              const amt = Number(withdrawAmt);
+              if (amt <= 0) { addNotification('❌ Invalid amount', 'error'); return; }
+              if (amt > store.bank) { addNotification('❌ Not enough in bank', 'error'); return; }
+              store.withdrawBank(amt); 
+              addNotification(`✅ Withdrew $${amt.toLocaleString()}`, 'success');
+              setWithdrawAmt(''); 
+            }} className="w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs mt-1">Withdraw</button>
           </div>
           <div>
             <input type="number" value={investAmt} onChange={e => setInvestAmt(e.target.value)} placeholder="Invest" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
             <QuickAmountButtons amount={investAmt} setAmount={setInvestAmt} maxAmount={store.cash} />
-            <button onClick={() => { store.investBank(Number(investAmt)); setInvestAmt(''); }} className="w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs mt-1">Invest (15%)</button>
+            <button onClick={() => { 
+              const amt = Number(investAmt);
+              if (amt <= 0) { addNotification('❌ Invalid amount', 'error'); return; }
+              if (amt > store.cash) { addNotification('❌ Not enough cash', 'error'); return; }
+              store.investBank(amt); 
+              addNotification(`✅ Invested $${amt.toLocaleString()} (15% return in 30s)`, 'success');
+              setInvestAmt(''); 
+            }} className="w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs mt-1">Invest (15%)</button>
           </div>
         </div>
       </div>
@@ -901,7 +990,7 @@ function HospitalLocation() {
         <div className="space-y-3">
           <div className="bg-red-900/30 border border-red-800 rounded p-4 text-center">
             <p className="text-red-300 font-bold text-lg">You're in the Hospital</p>
-            <p className="text-gray-400 text-sm mt-1">Time remaining: {store.hospitalTimer} ticks</p>
+            <p className="text-gray-400 text-sm mt-1">Time remaining: {store.hospitalTimer}s</p>
           </div>
           <button onClick={() => store.revivePlayer()} disabled={store.energy < 10}
             className="w-full py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
@@ -1167,10 +1256,68 @@ function CommunityLocation() {
 // Continue with other pages...
 function JobsPage() {
   const store = useGameStore();
+  const currentJob = jobs.find(j => j.id === store.currentJob);
+
+  const handleApply = (jobId: string) => {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    
+    if (store.level < job.levelReq) {
+      addNotification(`❌ Need Level ${job.levelReq} to apply`, 'error');
+      return;
+    }
+    if (job.statReq.manualLabor && store.manualLabor < job.statReq.manualLabor) {
+      addNotification(`❌ Need ${job.statReq.manualLabor} Manual Labor`, 'error');
+      return;
+    }
+    if (job.statReq.intelligence && store.intelligence < job.statReq.intelligence) {
+      addNotification(`❌ Need ${job.statReq.intelligence} Intelligence`, 'error');
+      return;
+    }
+    if (job.statReq.endurance && store.endurance < job.statReq.endurance) {
+      addNotification(`❌ Need ${job.statReq.endurance} Endurance`, 'error');
+      return;
+    }
+    
+    store.applyJob(jobId);
+    addNotification(`✅ Applied to ${job.name}!`, 'success');
+  };
+
+  const handleWork = () => {
+    if (store.energy < 5) {
+      addNotification('❌ Not enough energy! Need 5 energy', 'error');
+      return;
+    }
+    if (!store.currentJob) {
+      addNotification('❌ No job selected!', 'error');
+      return;
+    }
+    
+    store.workJob();
+    if (currentJob) {
+      addNotification(`✅ Worked shift! Earned $${currentJob.salary}`, 'success');
+    }
+  };
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">💼 Jobs</h2>
+      
+      {currentJob && (
+        <SectionCard title={`Current Job: ${currentJob.name}`}>
+          <div className="space-y-3">
+            <div className="bg-gray-700 rounded p-3">
+              <p className="text-sm text-gray-300">{currentJob.company}</p>
+              <p className="text-xs text-green-400 mt-1">Salary: ${currentJob.salary}/shift</p>
+            </div>
+            <button onClick={handleWork} disabled={store.energy < 5}
+              className="w-full py-3 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-bold">
+              Work Shift (5 Energy)
+            </button>
+          </div>
+        </SectionCard>
+      )}
+
       <SectionCard title="Available Jobs">
         <div className="space-y-2">
           {jobs.map(job => {
@@ -1183,16 +1330,23 @@ function JobsPage() {
             return (
               <div key={job.id} className={`bg-gray-700 rounded p-3 ${isCurrentJob ? 'border-2 border-amber-600' : ''}`}>
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-bold text-white">{job.name}</p>
                     <p className="text-[10px] text-gray-400">{job.company} • Lvl {job.levelReq}+</p>
                     <p className="text-xs text-green-400 mt-1">${job.salary}/shift</p>
+                    {(job.statReq.manualLabor || job.statReq.intelligence || job.statReq.endurance) && (
+                      <div className="flex gap-2 mt-1 text-[10px] text-gray-500">
+                        {job.statReq.manualLabor && <span>ML: {job.statReq.manualLabor}</span>}
+                        {job.statReq.intelligence && <span>INT: {job.statReq.intelligence}</span>}
+                        {job.statReq.endurance && <span>END: {job.statReq.endurance}</span>}
+                      </div>
+                    )}
                   </div>
                   {isCurrentJob ? (
                     <span className="text-xs text-amber-400 font-bold">Current Job</span>
                   ) : (
-                    <button onClick={() => store.applyJob(job.id)} disabled={!canApply}
-                      className="px-3 py-1 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-600 text-white rounded text-xs">
+                    <button onClick={() => handleApply(job.id)} disabled={!canApply}
+                      className="px-3 py-1 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-600 disabled:text-gray-500 text-white rounded text-xs">
                       Apply
                     </button>
                   )}
@@ -1202,14 +1356,6 @@ function JobsPage() {
           })}
         </div>
       </SectionCard>
-      {store.currentJob && (
-        <SectionCard>
-          <button onClick={() => store.workJob()} disabled={store.energy < 5}
-            className="w-full py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
-            Work Shift (5 Energy)
-          </button>
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -1225,13 +1371,11 @@ function GymPage() {
 
   const handleTrain = (stat: 'strength' | 'speed' | 'defense' | 'dexterity') => {
     if (store.energy < 5) { 
-      setMessage('❌ Not enough energy!'); 
-      setTimeout(() => setMessage(''), 2000);
+      addNotification('❌ Not enough energy! Need 5 energy', 'error');
       return; 
     }
     if (!canUseGym) { 
-      setMessage('❌ Requirements not met for this gym!'); 
-      setTimeout(() => setMessage(''), 2000);
+      addNotification('❌ Requirements not met for this gym!', 'error');
       return; 
     }
     
@@ -1239,8 +1383,8 @@ function GymPage() {
     store.trainStat(stat, selectedGym);
     const gain = store[stat] - prevStat;
     setLastGain({ stat, gain });
-    setMessage(`✅ Trained ${stat}! +${gain}`);
-    setTimeout(() => { setMessage(''); setLastGain(null); }, 2000);
+    addNotification(`✅ Trained ${stat}! +${gain}`, 'success');
+    setTimeout(() => setLastGain(null), 2000);
   };
 
   return (
@@ -1564,7 +1708,7 @@ function TravelPage() {
               <div className="text-center py-4">
                 <p className="text-blue-300 font-bold text-lg">✈️ In Flight</p>
                 <p className="text-gray-400 text-sm mt-1">Flying to {destinations.find(d => d.id === store.travelDestination)?.name}</p>
-                <p className="text-amber-400 font-bold mt-2">{store.travelTimer} ticks remaining</p>
+                <p className="text-amber-400 font-bold mt-2">{store.travelTimer}s remaining</p>
               </div>
             </SectionCard>
           ) : (
@@ -1721,19 +1865,55 @@ function EducationPage() {
   const categories = ['all', ...new Set(courses.map(c => c.category))];
   const filtered = filter === 'all' ? courses : courses.filter(c => c.category === filter);
 
+  const handleEnroll = (courseId: string) => {
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return;
+    
+    if (store.inEducation) {
+      addNotification('❌ Already studying another course!', 'error');
+      return;
+    }
+    if (store.cash < course.cost) {
+      addNotification(`❌ Not enough cash! Need $${course.cost.toLocaleString()}`, 'error');
+      return;
+    }
+    if (store.level < course.levelReq) {
+      addNotification(`❌ Need Level ${course.levelReq}!`, 'error');
+      return;
+    }
+    
+    store.startEducation(courseId);
+    let message = `✅ Enrolled in ${course.name}!`;
+    if (course.statBonus) {
+      message += ` (+${course.bonusAmount} ${course.statBonus})`;
+    }
+    addNotification(message, 'success');
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">📚 Education</h2>
       
       {store.inEducation && (
         <SectionCard>
-          <div className="bg-purple-900/30 border border-purple-800 rounded p-3 text-center">
-            <p className="text-purple-300 font-bold">Currently Studying</p>
-            <p className="text-white text-sm">{courses.find(c => c.id === store.educationCourse)?.name}</p>
-            <p className="text-gray-400 text-xs mt-1">Time remaining: {store.educationTimer} ticks</p>
+          <div className="bg-purple-900/30 border border-purple-800 rounded p-4">
+            <p className="text-purple-300 font-bold text-center">Currently Studying</p>
+            <p className="text-white text-sm text-center mt-2">{courses.find(c => c.id === store.educationCourse)?.name}</p>
+            <p className="text-gray-400 text-xs text-center mt-1">Time remaining: {store.educationTimer}s</p>
+            {courses.find(c => c.id === store.educationCourse)?.statBonus && (
+              <p className="text-green-400 text-xs text-center mt-2">
+                Reward: +{courses.find(c => c.id === store.educationCourse)?.bonusAmount} {courses.find(c => c.id === store.educationCourse)?.statBonus}
+              </p>
+            )}
           </div>
         </SectionCard>
       )}
+
+      <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
+        <p className="text-xs text-blue-300">
+          💡 <strong>Education Benefits:</strong> Courses provide permanent stat boosts, unlock job opportunities, and improve working stats. Some courses also provide gym bonuses and crime benefits.
+        </p>
+      </div>
 
       <div className="flex flex-wrap gap-1">
         {categories.map(cat => (
@@ -1753,9 +1933,14 @@ function EducationPage() {
               <p className="text-[10px] text-gray-400">{course.category} • Lvl {course.levelReq}+</p>
               <div className="flex gap-2 mt-1 text-[10px]">
                 <span className="text-green-400">${course.cost.toLocaleString()}</span>
-                <span className="text-blue-400">{course.duration} ticks</span>
+                <span className="text-blue-400">{course.duration}s</span>
               </div>
-              <button onClick={() => store.startEducation(course.id)} disabled={!canStart}
+              {course.statBonus && (
+                <p className="text-[10px] text-purple-400 mt-1">
+                  Reward: +{course.bonusAmount} {course.statBonus}
+                </p>
+              )}
+              <button onClick={() => handleEnroll(course.id)} disabled={!canStart}
                 className="mt-2 w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs">
                 Enroll
               </button>
@@ -1769,10 +1954,49 @@ function EducationPage() {
 
 function PropertiesPage() {
   const store = useGameStore();
+  const currentProperty = properties.find(p => p.id === store.currentProperty);
+
+  const handleBuy = (propertyId: string) => {
+    const prop = properties.find(p => p.id === propertyId);
+    if (!prop) return;
+    
+    if (store.cash < prop.price) {
+      addNotification(`❌ Not enough cash! Need $${prop.price.toLocaleString()}`, 'error');
+      return;
+    }
+    if (store.level < prop.levelReq) {
+      addNotification(`❌ Need Level ${prop.levelReq}!`, 'error');
+      return;
+    }
+    
+    store.buyProperty(propertyId);
+    addNotification(`✅ Purchased ${prop.name}! Max Happy: ${prop.maxHappy}`, 'success');
+  };
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">🏠 Properties</h2>
+      
+      {currentProperty && (
+        <SectionCard title={`Current Property: ${currentProperty.name}`}>
+          <div className="bg-gray-700 rounded p-3">
+            <p className="text-sm text-gray-300">Max Happy: <span className="text-pink-400 font-bold">{currentProperty.maxHappy}</span></p>
+            <p className="text-xs text-gray-400 mt-1">Upkeep: ${currentProperty.upkeep}/day</p>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {currentProperty.benefits.map(b => (
+                <span key={b} className="bg-gray-600 px-2 py-0.5 rounded text-[10px] text-gray-200">{b}</span>
+              ))}
+            </div>
+          </div>
+        </SectionCard>
+      )}
+
+      <div className="bg-pink-900/20 border border-pink-800 rounded-lg p-3">
+        <p className="text-xs text-pink-300">
+          💡 <strong>Property Benefits:</strong> Properties increase your maximum Happy bar. Higher happy means better gym gains and overall performance. Each property has unique benefits and upkeep costs.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {properties.map(prop => {
           const canBuy = store.cash >= prop.price && store.level >= prop.levelReq;
@@ -1780,9 +2004,10 @@ function PropertiesPage() {
           return (
             <div key={prop.id} className={`bg-gray-800 rounded-lg p-4 border ${owned ? 'border-green-700' : canBuy ? 'border-gray-700' : 'border-gray-800 opacity-50'}`}>
               <div className="flex justify-between items-start flex-wrap gap-2">
-                <div>
+                <div className="flex-1">
                   <h4 className="font-bold text-white">{prop.name} {owned && <span className="text-green-400 text-xs">(Owned)</span>}</h4>
-                  <p className="text-xs text-gray-400">Max Happy: {prop.maxHappy} • Upkeep: ${prop.upkeep}/day • Lvl {prop.levelReq}+</p>
+                  <p className="text-xs text-gray-400 mt-1">Max Happy: <span className="text-pink-400 font-bold">{prop.maxHappy}</span> • Upkeep: ${prop.upkeep}/day</p>
+                  <p className="text-[10px] text-gray-500">Lvl {prop.levelReq}+</p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {prop.benefits.map(b => (
                       <span key={b} className="bg-gray-700 px-1.5 py-0.5 rounded text-[10px] text-gray-300">{b}</span>
@@ -1792,7 +2017,7 @@ function PropertiesPage() {
                 {!owned && (
                   <div className="text-right">
                     <p className="text-green-400 font-bold text-sm">${prop.price.toLocaleString()}</p>
-                    <button onClick={() => canBuy && store.buyProperty(prop.id)} disabled={!canBuy}
+                    <button onClick={() => handleBuy(prop.id)} disabled={!canBuy}
                       className="mt-1 px-3 py-1 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs">Buy</button>
                   </div>
                 )}
@@ -1873,7 +2098,7 @@ function FactionPage() {
                 <div className="text-center">
                   <p className="text-3xl font-bold text-amber-400">{ext.chainCount}</p>
                   <p className="text-xs text-gray-400">Current chain hits</p>
-                  <p className="text-xs text-gray-500 mt-1">Timer: {ext.chainTimer > 0 ? `${ext.chainTimer} ticks` : 'Inactive'}</p>
+                  <p className="text-xs text-gray-500 mt-1">Timer: {ext.chainTimer > 0 ? `${ext.chainTimer}s` : 'Inactive'}</p>
                   <button onClick={() => ext.addToChain()} className="mt-2 px-4 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs">
                     Add Hit to Chain
                   </button>
