@@ -19,7 +19,7 @@ function App() {
     const interval = setInterval(() => {
       store.tick();
       ext.tick();
-    }, 3000);
+    }, 1000); // 1 tick = 1 second (real-time)
     return () => clearInterval(interval);
   }, []);
 
@@ -285,6 +285,24 @@ function SectionCard({ title, children, className = '' }: { title?: string; chil
   );
 }
 
+function QuickAmountButtons({ amount, setAmount, maxAmount }: { amount: string; setAmount: (v: string) => void; maxAmount: number }) {
+  const percentages = [10, 25, 50, 75, 100];
+  
+  return (
+    <div className="flex gap-1 mt-1">
+      {percentages.map(pct => (
+        <button
+          key={pct}
+          onClick={() => setAmount(String(Math.floor(maxAmount * pct / 100)))}
+          className="flex-1 px-1 py-0.5 bg-gray-600 hover:bg-gray-500 text-white rounded text-[9px] font-medium"
+        >
+          {pct}%
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function TimerDisplay({ label, time, icon, color = 'amber' }: { label: string; time: number; icon: string; color?: string }) {
   if (time <= 0) return null;
   
@@ -502,17 +520,27 @@ function EquipmentTab() {
   return (
     <div className="space-y-4">
       <SectionCard title="⚔️ Weapons">
-        <p className="text-xs text-gray-400 mb-2">Equipped: <span className="text-white">{items.find(i => i.id === store.equippedWeapon)?.name || 'Fists'}</span></p>
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-xs text-gray-400">Equipped: <span className="text-white font-bold">{items.find(i => i.id === store.equippedWeapon)?.name || 'Fists'}</span></p>
+          {store.equippedWeapon !== 'fists' && (
+            <button onClick={() => store.unequipWeapon()} className="px-2 py-0.5 bg-red-700 hover:bg-red-600 text-white rounded text-xs">Unequip</button>
+          )}
+        </div>
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {weapons.map(w => {
             const owned = store.inventory.find(i => i.itemId === w.id);
+            const isEquipped = store.equippedWeapon === w.id;
             return (
-              <div key={w.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
-                <span className="text-gray-300">{w.name} (DMG: {w.effectValue})</span>
+              <div key={w.id} className={`flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs ${isEquipped ? 'border border-amber-600' : ''}`}>
+                <span className="text-gray-300">{w.name} (DMG: {w.effectValue}) {isEquipped && <span className="text-amber-400 text-[10px]">✓ Equipped</span>}</span>
                 {owned ? (
-                  <button onClick={() => store.useItem(w.id)} className="px-2 py-0.5 bg-amber-600 text-white rounded">Equip</button>
+                  isEquipped ? (
+                    <span className="text-[10px] text-amber-400">Active</span>
+                  ) : (
+                    <button onClick={() => store.useItem(w.id)} className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded">Equip</button>
+                  )
                 ) : (
-                  <button onClick={() => store.buyItem(w.id)} className="px-2 py-0.5 bg-green-700 text-white rounded">${w.price}</button>
+                  <button onClick={() => store.buyItem(w.id)} className="px-2 py-0.5 bg-green-700 hover:bg-green-600 text-white rounded">${w.price}</button>
                 )}
               </div>
             );
@@ -521,17 +549,27 @@ function EquipmentTab() {
       </SectionCard>
 
       <SectionCard title="🛡️ Armor">
-        <p className="text-xs text-gray-400 mb-2">Equipped: <span className="text-white">{store.equippedArmor ? items.find(i => i.id === store.equippedArmor)?.name : 'None'}</span></p>
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-xs text-gray-400">Equipped: <span className="text-white font-bold">{store.equippedArmor ? items.find(i => i.id === store.equippedArmor)?.name : 'None'}</span></p>
+          {store.equippedArmor && (
+            <button onClick={() => store.unequipArmor()} className="px-2 py-0.5 bg-red-700 hover:bg-red-600 text-white rounded text-xs">Unequip</button>
+          )}
+        </div>
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {armors.map(a => {
             const owned = store.inventory.find(i => i.itemId === a.id);
+            const isEquipped = store.equippedArmor === a.id;
             return (
-              <div key={a.id} className="flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs">
-                <span className="text-gray-300">{a.name} (DEF: {a.effectValue})</span>
+              <div key={a.id} className={`flex justify-between items-center bg-gray-700/50 rounded p-2 text-xs ${isEquipped ? 'border border-amber-600' : ''}`}>
+                <span className="text-gray-300">{a.name} (DEF: {a.effectValue}) {isEquipped && <span className="text-amber-400 text-[10px]">✓ Equipped</span>}</span>
                 {owned ? (
-                  <button onClick={() => store.useItem(a.id)} className="px-2 py-0.5 bg-amber-600 text-white rounded">Equip</button>
+                  isEquipped ? (
+                    <span className="text-[10px] text-amber-400">Active</span>
+                  ) : (
+                    <button onClick={() => store.useItem(a.id)} className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded">Equip</button>
+                  )
                 ) : (
-                  <button onClick={() => store.buyItem(a.id)} className="px-2 py-0.5 bg-green-700 text-white rounded">${a.price}</button>
+                  <button onClick={() => store.buyItem(a.id)} className="px-2 py-0.5 bg-green-700 hover:bg-green-600 text-white rounded">${a.price}</button>
                 )}
               </div>
             );
@@ -646,15 +684,18 @@ function BankLocation() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
             <input type="number" value={depositAmt} onChange={e => setDepositAmt(e.target.value)} placeholder="Deposit" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
-            <button onClick={() => { store.depositBank(Number(depositAmt)); setDepositAmt(''); }} className="w-full px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs">Deposit</button>
+            <QuickAmountButtons amount={depositAmt} setAmount={setDepositAmt} maxAmount={store.cash} />
+            <button onClick={() => { store.depositBank(Number(depositAmt)); setDepositAmt(''); }} className="w-full px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs mt-1">Deposit</button>
           </div>
           <div>
             <input type="number" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Withdraw" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
-            <button onClick={() => { store.withdrawBank(Number(withdrawAmt)); setWithdrawAmt(''); }} className="w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs">Withdraw</button>
+            <QuickAmountButtons amount={withdrawAmt} setAmount={setWithdrawAmt} maxAmount={store.bank} />
+            <button onClick={() => { store.withdrawBank(Number(withdrawAmt)); setWithdrawAmt(''); }} className="w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs mt-1">Withdraw</button>
           </div>
           <div>
             <input type="number" value={investAmt} onChange={e => setInvestAmt(e.target.value)} placeholder="Invest" className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-sm text-white mb-1" />
-            <button onClick={() => { store.investBank(Number(investAmt)); setInvestAmt(''); }} className="w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs">Invest (15%)</button>
+            <QuickAmountButtons amount={investAmt} setAmount={setInvestAmt} maxAmount={store.cash} />
+            <button onClick={() => { store.investBank(Number(investAmt)); setInvestAmt(''); }} className="w-full px-2 py-1 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs mt-1">Invest (15%)</button>
           </div>
         </div>
       </div>
@@ -879,6 +920,8 @@ function HospitalLocation() {
 
 function JailLocation() {
   const store = useGameStore();
+  const [message, setMessage] = useState('');
+  const bailCost = Math.floor(store.jailTimer * 500);
 
   return (
     <SectionCard title="🔒 Jail">
@@ -886,8 +929,40 @@ function JailLocation() {
         <div className="space-y-3">
           <div className="bg-yellow-900/30 border border-yellow-800 rounded p-4 text-center">
             <p className="text-yellow-300 font-bold text-lg">You're in Jail</p>
-            <p className="text-gray-400 text-sm mt-1">Time remaining: {store.jailTimer} ticks</p>
+            <p className="text-gray-400 text-sm mt-1">Time remaining: {store.jailTimer} seconds</p>
           </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => {
+              store.escapeJail();
+              if (!store.inJail) {
+                setMessage('✅ Escaped successfully!');
+              } else {
+                setMessage('❌ Escape failed! Time increased.');
+              }
+              setTimeout(() => setMessage(''), 2000);
+            }} className="py-2 bg-orange-700 hover:bg-orange-600 text-white rounded text-sm">
+              Escape (40% chance)
+            </button>
+            <button onClick={() => {
+              if (store.cash >= bailCost) {
+                store.bailFromJail();
+                setMessage('✅ Bailed out!');
+                setTimeout(() => setMessage(''), 2000);
+              } else {
+                setMessage('❌ Not enough cash!');
+                setTimeout(() => setMessage(''), 2000);
+              }
+            }} disabled={store.cash < bailCost} className="py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm">
+              Bail (${bailCost.toLocaleString()})
+            </button>
+          </div>
+          
+          {message && (
+            <div className={`p-2 rounded text-center text-sm ${message.includes('✅') ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+              {message}
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-green-900/30 border border-green-800 rounded p-4 text-center">

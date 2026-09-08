@@ -132,11 +132,15 @@ export interface GameState {
   trainStat: (stat: 'strength' | 'speed' | 'defense' | 'dexterity', gymId: string) => void;
   commitCrime: (crimeId: string) => void;
   attackPlayer: (targetId: string, type: 'mug' | 'hospitalize' | 'leave') => void;
+  escapeJail: () => void;
+  bailFromJail: () => void;
   workJob: () => void;
   applyJob: (jobId: string) => void;
   buyItem: (itemId: string) => void;
   sellItem: (itemId: string) => void;
   useItem: (itemId: string) => void;
+  unequipWeapon: () => void;
+  unequipArmor: () => void;
   depositBank: (amount: number) => void;
   withdrawBank: (amount: number) => void;
   investBank: (amount: number) => void;
@@ -303,8 +307,13 @@ export const useGameStore = create<GameState>()(
         if (state.nerve < crime.nerveCost) return;
         if (state.level < crime.levelReq) return;
 
-        const successChance = Math.min(95, Math.max(5, 50 + state.crimeSkill * 2 - crime.difficulty + state.dexterity * 0.5));
+        // Improved success rate - easier crimes
+        const successChance = Math.min(95, Math.max(20, 60 + state.crimeSkill * 3 - crime.difficulty * 0.5 + state.dexterity * 0.8));
         const success = Math.random() * 100 < successChance;
+        
+        // If failed, 70% chance to get caught (jail), 30% just fail
+        const caughtChance = success ? 0 : 70;
+        const caught = Math.random() * 100 < caughtChance;
 
         const log: CrimeLog = {
           id: Date.now().toString(),
@@ -356,18 +365,46 @@ export const useGameStore = create<GameState>()(
             crimeLogs: [log, ...state.crimeLogs].slice(0, 50),
           });
         } else {
-          const jailChance = Math.random() * 100;
-          const goJail = jailChance < 40;
+          // Reduced jail chance - only 25% chance to get caught
+          const goJail = caught && Math.random() * 100 < 25;
 
           set({
             nerve: state.nerve - crime.nerveCost,
             crimeExp: state.crimeExp + Math.floor(crime.expReward * 0.3),
             totalCrimes: state.totalCrimes + 1,
             inJail: goJail,
-            jailTimer: goJail ? Math.floor(Math.random() * 30 + 10) : state.jailTimer,
+            jailTimer: goJail ? Math.floor(Math.random() * 20 + 5) : state.jailTimer, // 5-25 seconds
             crimeLogs: [log, ...state.crimeLogs].slice(0, 50),
           });
         }
+      },
+
+      escapeJail: () => {
+        const state = get();
+        if (!state.inJail) return;
+        
+        // 40% chance to escape successfully
+        const success = Math.random() * 100 < 40;
+        if (success) {
+          set({ inJail: false, jailTimer: 0 });
+        } else {
+          // Failed escape adds more time
+          set({ jailTimer: state.jailTimer + 10 });
+        }
+      },
+
+      bailFromJail: () => {
+        const state = get();
+        if (!state.inJail) return;
+        
+        const bailCost = Math.floor(state.jailTimer * 500); // $500 per second remaining
+        if (state.cash < bailCost) return;
+        
+        set({
+          cash: state.cash - bailCost,
+          inJail: false,
+          jailTimer: 0,
+        });
       },
 
       attackPlayer: (targetId, type) => {
@@ -592,6 +629,14 @@ export const useGameStore = create<GameState>()(
         }
 
         set(updates);
+      },
+
+      unequipWeapon: () => {
+        set({ equippedWeapon: 'fists' });
+      },
+
+      unequipArmor: () => {
+        set({ equippedArmor: null });
       },
 
       depositBank: (amount) => {
