@@ -1887,14 +1887,14 @@ function MessagesPage() {
 function ProfilePage() {
   const store = useGameStore();
   const ext = useExtendedStore();
-  const [tab, setTab] = useState<'overview' | 'stats' | 'merits' | 'missions' | 'bounty' | 'marriage' | 'hacking'>('overview');
+  const [tab, setTab] = useState<'overview' | 'stats' | 'merits' | 'missions' | 'bounty' | 'marriage' | 'hacking' | 'upgrades'>('overview');
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-amber-400">👤 Profile</h2>
 
       <div className="flex flex-wrap gap-2">
-        {(['overview', 'stats', 'merits', 'missions', 'bounty', 'marriage', 'hacking'] as const).map(t => (
+        {(['overview', 'stats', 'merits', 'upgrades', 'missions', 'bounty', 'marriage', 'hacking'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-3 py-1.5 rounded text-xs font-medium capitalize ${tab === t ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'}`}>
             {t === 'hacking' ? 'Hacking' : t}
@@ -1959,6 +1959,78 @@ function ProfilePage() {
                     className="px-2 py-1 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-600 text-white rounded text-xs">+1</button>
                 </div>
               ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {tab === 'upgrades' && (
+        <div className="space-y-3">
+          <SectionCard title="⚡ Energy Upgrades">
+            <div className="space-y-3">
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <p className="text-sm font-bold text-white">Donator Status</p>
+                    <p className="text-xs text-gray-400 mt-1">Increase max Energy from 150 to 250</p>
+                  </div>
+                  {store.isDonator ? (
+                    <span className="bg-green-900/50 text-green-300 px-3 py-1 rounded text-xs font-bold">✓ Active</span>
+                  ) : (
+                    <button onClick={() => store.buyDonator()} disabled={store.points < 30}
+                      className="px-4 py-2 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-600 text-white rounded text-xs font-bold">
+                      30 Points
+                    </button>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400">
+                  <p>Current Max Energy: <span className="text-amber-400 font-bold">{store.maxEnergy}</span></p>
+                  {store.isDonator && <p className="text-green-400 mt-1">✓ Donator benefits active</p>}
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="📊 Bar Information">
+            <div className="space-y-3 text-xs">
+              <div className="bg-gray-700 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">⚡</span>
+                  <p className="font-bold text-white">Energy Bar</p>
+                </div>
+                <p className="text-gray-400">Default: 150 | Donator: 250</p>
+                <p className="text-gray-500 text-[10px] mt-1">Used for gym training, combat, and various activities</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🧠</span>
+                  <p className="font-bold text-white">Nerve Bar (NNB)</p>
+                </div>
+                <p className="text-gray-400">Default: 10 | Max: 60</p>
+                <p className="text-gray-500 text-[10px] mt-1">Increases with successful crimes. Used for committing crimes</p>
+                <p className="text-amber-400 mt-1">Current NNB: <span className="font-bold">{store.maxNerve}</span>/60</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">😊</span>
+                  <p className="font-bold text-white">Happy Bar</p>
+                </div>
+                <p className="text-gray-400">Default: 150 | Property dependent</p>
+                <p className="text-gray-500 text-[10px] mt-1">Increases with better properties. Affects gym gains</p>
+                <p className="text-amber-400 mt-1">Current Max: <span className="font-bold">{store.maxHappy}</span></p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">❤️</span>
+                  <p className="font-bold text-white">Life Bar</p>
+                </div>
+                <p className="text-gray-400">Base: 100 | +50 per level</p>
+                <p className="text-gray-500 text-[10px] mt-1">Increases automatically when you level up</p>
+                <p className="text-amber-400 mt-1">Current Max: <span className="font-bold">{store.maxLife}</span> (Level {store.level})</p>
+              </div>
             </div>
           </SectionCard>
         </div>

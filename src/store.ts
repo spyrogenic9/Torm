@@ -43,6 +43,7 @@ export interface GameState {
   bankInvestment: number;
   bankInvestmentTime: number;
   points: number;
+  isDonator: boolean; // Donator status for 250 energy
   energy: number;
   maxEnergy: number;
   nerve: number;
@@ -150,6 +151,7 @@ export interface GameState {
   revivePlayer: () => void;
   createFaction: (name: string) => void;
   joinFaction: (name: string) => void;
+  buyDonator: () => void;
   resetGame: () => void;
 }
 
@@ -180,12 +182,13 @@ export const useGameStore = create<GameState>()(
       bankInvestment: 0,
       bankInvestmentTime: 0,
       points: 0,
-      energy: 10,
-      maxEnergy: 10,
+      isDonator: false,
+      energy: 150,
+      maxEnergy: 150,
       nerve: 10,
       maxNerve: 10,
-      happy: 10,
-      maxHappy: 10,
+      happy: 150,
+      maxHappy: 150,
       life: 100,
       maxLife: 100,
 
@@ -269,10 +272,13 @@ export const useGameStore = create<GameState>()(
         let newXpVal = newXp;
         let newMeritPoints = state.meritPoints;
 
+        let newMaxLife = state.maxLife;
         if (newXp >= neededXp) {
           newLevel += 1;
           newXpVal = newXp - neededXp;
           newMeritPoints += 1;
+          // Life increases by 50 per level (Torn style)
+          newMaxLife = 100 + (newLevel - 1) * 50;
         }
 
         set({
@@ -282,6 +288,8 @@ export const useGameStore = create<GameState>()(
           level: newLevel,
           rank: getRank(newLevel),
           meritPoints: newMeritPoints,
+          maxLife: newMaxLife,
+          life: newLevel > state.level ? newMaxLife : state.life, // Full heal on level up
           totalXpGained: state.totalXpGained + 5,
         });
       },
@@ -314,15 +322,25 @@ export const useGameStore = create<GameState>()(
           let newLevel = state.level;
           let newXpVal = newXp;
           let newMeritPoints = state.meritPoints;
+          let newMaxLife = state.maxLife;
+          
+          // NNB (Natural Nerve Bar) increases with successful crimes, max 60
+          let newMaxNerve = state.maxNerve;
+          if (state.maxNerve < 60 && Math.random() < 0.3) { // 30% chance to increase NNB
+            newMaxNerve = Math.min(60, state.maxNerve + 1);
+          }
 
           if (newXp >= neededXp) {
             newLevel += 1;
             newXpVal = newXp - neededXp;
             newMeritPoints += 1;
+            // Life increases by 50 per level (Torn style)
+            newMaxLife = 100 + (newLevel - 1) * 50;
           }
 
           set({
-            nerve: state.nerve - crime.nerveCost,
+            nerve: Math.min(newMaxNerve, state.nerve - crime.nerveCost),
+            maxNerve: newMaxNerve,
             cash: state.cash + reward,
             crimeExp: state.crimeExp + crime.expReward,
             crimeSkill: state.crimeSkill + 0.1,
@@ -330,6 +348,8 @@ export const useGameStore = create<GameState>()(
             level: newLevel,
             rank: getRank(newLevel),
             meritPoints: newMeritPoints,
+            maxLife: newMaxLife,
+            life: newLevel > state.level ? newMaxLife : state.life,
             totalCrimes: state.totalCrimes + 1,
             totalCashEarned: state.totalCashEarned + reward,
             totalXpGained: state.totalXpGained + crime.expReward,
@@ -425,10 +445,15 @@ export const useGameStore = create<GameState>()(
           const newXp = state.xp + xpGain;
           const neededXp = xpForLevel(state.level);
           if (newXp >= neededXp) {
-            newState.level = state.level + 1;
+            const newLevel = state.level + 1;
+            newState.level = newLevel;
             newState.xp = newXp - neededXp;
-            newState.rank = getRank(state.level + 1);
+            newState.rank = getRank(newLevel);
             newState.meritPoints = state.meritPoints + 1;
+            // Life increases by 50 per level (Torn style)
+            const newMaxLife = 100 + (newLevel - 1) * 50;
+            newState.maxLife = newMaxLife;
+            newState.life = newMaxLife; // Full heal on level up
           } else {
             newState.xp = newXp;
           }
@@ -460,11 +485,14 @@ export const useGameStore = create<GameState>()(
         let newLevel = state.level;
         let newXpVal = newXp;
         let newMeritPoints = state.meritPoints;
+        let newMaxLife = state.maxLife;
 
         if (newXp >= neededXp) {
           newLevel += 1;
           newXpVal = newXp - neededXp;
           newMeritPoints += 1;
+          // Life increases by 50 per level (Torn style)
+          newMaxLife = 100 + (newLevel - 1) * 50;
         }
 
         set({
@@ -477,6 +505,8 @@ export const useGameStore = create<GameState>()(
           level: newLevel,
           rank: getRank(newLevel),
           meritPoints: newMeritPoints,
+          maxLife: newMaxLife,
+          life: newLevel > state.level ? newMaxLife : state.life,
           totalCashEarned: state.totalCashEarned + job.salary,
           totalXpGained: state.totalXpGained + 3,
         });
@@ -852,11 +882,23 @@ export const useGameStore = create<GameState>()(
         set({ factionName: name, factionRank: 'Member', factionRespect: 0 });
       },
 
+      buyDonator: () => {
+        const state = get();
+        if (state.isDonator || state.points < 30) return; // 30 points for donator
+        set({
+          isDonator: true,
+          points: state.points - 30,
+          maxEnergy: 250,
+          energy: Math.min(state.energy, 250),
+        });
+      },
+
       resetGame: () => {
         set({
           name: 'Player', level: 1, xp: 0, age: 0, rank: 'Absolute Beginner',
           cash: 1000, bank: 0, bankInvestment: 0, bankInvestmentTime: 0, points: 0,
-          energy: 10, maxEnergy: 10, nerve: 10, maxNerve: 10, happy: 10, maxHappy: 10,
+          isDonator: false,
+          energy: 150, maxEnergy: 150, nerve: 10, maxNerve: 10, happy: 150, maxHappy: 150,
           life: 100, maxLife: 100,
           strength: 5, speed: 5, defense: 5, dexterity: 5,
           manualLabor: 0, intelligence: 0, endurance: 0,
